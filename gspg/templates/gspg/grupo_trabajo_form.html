@@ -1,0 +1,247 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% if grupo %}Editar{% else %}Nuevo{% endif %} Grupo de Trabajo - Gestión de Procesos de Grado
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .select2-container .select2-selection--multiple {
+        min-height: 38px;
+    }
+    .select2-container--default .select2-selection--multiple {
+        border: 1px solid #ced4da;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h3 mb-0">
+                <i class="fas fa-users me-2 text-primary"></i>
+                {% if grupo %}Editar{% else %}Nuevo{% endif %} Grupo de Trabajo
+            </h1>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form method="post" id="grupo-form">
+                        {% csrf_token %}
+                        
+                        {% if form.errors %}
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle me-2"></i>Por favor corrige los errores indicados.
+                        </div>
+                        {% endif %}
+                        
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="{{ form.nombre.id_for_label }}" class="form-label">{{ form.nombre.label }}</label>
+                                {{ form.nombre }}
+                                {% if form.nombre.errors %}
+                                <div class="text-danger">{{ form.nombre.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.profesor.id_for_label }}" class="form-label">{{ form.profesor.label }}</label>
+                                {{ form.profesor }}
+                                {% if form.profesor.errors %}
+                                <div class="text-danger">{{ form.profesor.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.intake.id_for_label }}" class="form-label">{{ form.intake.label }}</label>
+                                {{ form.intake }}
+                                {% if form.intake.errors %}
+                                <div class="text-danger">{{ form.intake.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">Al seleccionar un intake, se filtrarán los estudiantes disponibles.</div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.fecha_inicio.id_for_label }}" class="form-label">{{ form.fecha_inicio.label }}</label>
+                                {{ form.fecha_inicio }}
+                                {% if form.fecha_inicio.errors %}
+                                <div class="text-danger">{{ form.fecha_inicio.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.fecha_fin.id_for_label }}" class="form-label">{{ form.fecha_fin.label }}</label>
+                                {{ form.fecha_fin }}
+                                {% if form.fecha_fin.errors %}
+                                <div class="text-danger">{{ form.fecha_fin.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="{{ form.estudiantes.id_for_label }}" class="form-label">{{ form.estudiantes.label }}</label>
+                                {{ form.estudiantes }}
+                                {% if form.estudiantes.errors %}
+                                <div class="text-danger">{{ form.estudiantes.errors }}</div>
+                                {% endif %}
+                                <div class="form-text" id="estudiantes-help">
+                                    {% if grupo %}
+                                    Estudiantes disponibles en el intake seleccionado.
+                                    {% else %}
+                                    Primero selecciona un intake para ver los estudiantes disponibles.
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="{{ form.observaciones.id_for_label }}" class="form-label">{{ form.observaciones.label }}</label>
+                                {{ form.observaciones }}
+                                {% if form.observaciones.errors %}
+                                <div class="text-danger">{{ form.observaciones.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'gspg:grupo_trabajo_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>Guardar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Primero incluir jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Luego Select2 -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        // Inicializar Select2 para profesores
+        $('#id_profesor').select2({
+            placeholder: 'Selecciona un profesor...',
+            width: '100%'
+        });
+        
+        // Inicializar Select2 para intake
+        $('#id_intake').select2({
+            placeholder: 'Selecciona un intake...',
+            width: '100%'
+        });
+        
+        // Inicializar Select2 para estudiantes
+        $('#id_estudiantes').select2({
+            placeholder: 'Selecciona estudiantes...',
+            width: '100%'
+        });
+        
+        // Cuando cambia el intake, actualizar los estudiantes disponibles
+        $('#id_intake').on('change', function() {
+            var intakeId = $(this).val();
+            if (intakeId) {
+                // Habilitar el campo de estudiantes
+                $('#id_estudiantes').prop('disabled', false);
+                
+                // Cargar estudiantes disponibles para este intake
+                $.ajax({
+                    url: '{% url "gspg:get_estudiantes_por_intake" %}',
+                    data: {
+                        'intake_id': intakeId,
+                        'grupo_id': '{{ grupo.id|default:"" }}'
+                    },
+                    dataType: 'json',
+                    success: function(data) {
+                        // Limpiar el select de estudiantes
+                        $('#id_estudiantes').empty();
+                        
+                        // Añadir los estudiantes disponibles
+                        if (data.estudiantes && data.estudiantes.length > 0) {
+                            $.each(data.estudiantes, function(index, estudiante) {
+                                $('#id_estudiantes').append(
+                                    $('<option></option>')
+                                        .attr('value', estudiante.id)
+                                        .text(estudiante.text)
+                                );
+                            });
+                            $('#estudiantes-help').text('Selecciona los estudiantes que formarán parte de este grupo.');
+                        } else {
+                            $('#estudiantes-help').text('No hay estudiantes disponibles para este intake.');
+                        }
+                        
+                        // Actualizar Select2
+                        $('#id_estudiantes').trigger('change');
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error al cargar estudiantes:', error);
+                        $('#estudiantes-help').text('Error al cargar estudiantes. Por favor, inténtalo de nuevo.');
+                    }
+                });
+            } else {
+                // Deshabilitar el campo de estudiantes si no hay intake seleccionado
+                $('#id_estudiantes').prop('disabled', true).empty().trigger('change');
+                $('#estudiantes-help').text('Primero selecciona un intake para ver los estudiantes disponibles.');
+            }
+        });
+        
+        // Si ya hay un intake seleccionado (en edición), cargamos los estudiantes
+        {% if grupo and grupo.intake %}
+        // Cargar estudiantes disponibles para este intake
+        $.ajax({
+            url: '{% url "gspg:get_estudiantes_por_intake" %}',
+            data: {
+                'intake_id': '{{ grupo.intake.id }}',
+                'grupo_id': '{{ grupo.id }}'
+            },
+            dataType: 'json',
+            success: function(data) {
+                // Añadir los estudiantes disponibles
+                if (data.estudiantes && data.estudiantes.length > 0) {
+                    $.each(data.estudiantes, function(index, estudiante) {
+                        // Comprobar si el estudiante ya está seleccionado
+                        var isSelected = false;
+                        {% for est in grupo.estudiantes.all %}
+                        if (estudiante.id == {{ est.id }}) {
+                            isSelected = true;
+                        }
+                        {% endfor %}
+                        
+                        var option = new Option(estudiante.text, estudiante.id, false, isSelected);
+                        $('#id_estudiantes').append(option);
+                    });
+                    
+                    // Actualizar Select2
+                    $('#id_estudiantes').trigger('change');
+                }
+            }
+        });
+        {% endif %}
+        
+        // Prevenir enviar el formulario con estudiantes disabled
+        $('#grupo-form').on('submit', function() {
+            $('#id_estudiantes, #id_intake').prop('disabled', false);
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,20 @@
+La primera herramienta es Intake, un intake es tiene un mes un año y una sección nuemrica que puede ser 1 o 2. 
+
+            <h1 class="h3 mb-0 text-primary">
+                <i class="fa-solid fa-toolbox me-2"></i>Panel de Herramientas
+            </h1>
+
+
+
+# Terminal 1 - Worker de Celery
+celery -A core worker --loglevel=info
+
+# Terminal 2 - Celery Beat para tareas programadas
+celery -A core beat --loglevel=info
+
+python manage.py shell
+
+from whatsapp_bot.services import send_whatsapp_message
+
+# Asegúrate de usar un número de teléfono que hayas registrado para pruebas
+send_whatsapp_message('52XXXXXXXXXX', 'Este es un mensaje de prueba')

@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}Intakes - Gestión de Procesos de Grado{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col d-flex justify-content-between align-items-center">
+            <h1 class="h3 mb-0">
+                <i class="fas fa-users-class me-2 text-primary"></i>Intakes
+            </h1>
+            <a href="{% url 'gspg:intake_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>Nuevo Intake
+            </a>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    {% if intakes %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Intake</th>
+                                    <th>Año</th>
+                                    <th>Mes</th>
+                                    <th>Sección</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for intake in intakes %}
+                                <tr>
+                                    <td>{{ intake }}</td>
+                                    <td>{{ intake.year }}</td>
+                                    <td>{{ intake.get_month_display }}</td>
+                                    <td>{{ intake.section }}</td>
+                                    <td>
+                                        <a href="{% url 'gspg:intake_edit' intake.pk %}" class="btn btn-sm btn-outline-secondary me-1">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{% url 'gspg:intake_delete' intake.pk %}" class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>No hay intakes registrados. <a href="{% url 'gspg:intake_create' %}" class="alert-link">Crea uno nuevo</a>.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

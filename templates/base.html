@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Gestión de Procesos de Grado MCEEE{% endblock %}</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    
+    <!-- Estilos base de la aplicación con paleta de colores personalizada -->
+    <style>
+        :root {
+            /* Paleta de colores personalizada */
+            --primary-color: #16325B;     /* Azul oscuro */
+            --secondary-color: #227B94;   /* Azul medio */
+            --info-color: #78B7D0;        /* Azul claro */
+            --light-color: #FFDC7F;       /* Amarillo claro */
+            
+            /* Colores de alerta */
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+        }
+        
+        /* Sobreescritura de clases de Bootstrap */
+        .bg-primary {
+            background-color: var(--primary-color) !important;
+        }
+        
+        .bg-secondary {
+            background-color: var(--secondary-color) !important;
+        }
+        
+        .bg-info {
+            background-color: var(--info-color) !important;
+        }
+        
+        .bg-light {
+            background-color: var(--light-color) !important;
+        }
+        
+        .text-primary {
+            color: var(--primary-color) !important;
+        }
+        
+        .text-secondary {
+            color: var(--secondary-color) !important;
+        }
+        
+        .text-info {
+            color: var(--info-color) !important;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary:hover, .btn-primary:focus, .btn-primary:active {
+            background-color: #0e2445 !important;
+            border-color: #0e2445 !important;
+        }
+        
+        .btn-secondary {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+        
+        .btn-secondary:hover, .btn-secondary:focus, .btn-secondary:active {
+            background-color: #1a6a7f !important;
+            border-color: #1a6a7f !important;
+        }
+        
+        .btn-info {
+            background-color: var(--info-color);
+            border-color: var(--info-color);
+            color: white;
+        }
+        
+        .btn-info:hover, .btn-info:focus, .btn-info:active {
+            background-color: #62a5bd !important;
+            border-color: #62a5bd !important;
+            color: white !important;
+        }
+        
+        .btn-outline-primary {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-outline-primary:hover {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        /* Estilos generales */
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: #f8f9fa;
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+        }
+        
+        .main-content {
+            flex: 1;
+        }
+        
+        .footer {
+            margin-top: auto;
+            padding: 1rem 0;
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        /* Personalización de alertas para mensajes */
+        .alert-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            max-width: 350px;
+        }
+        
+        .alert-dismissible {
+            padding-right: 3rem;
+        }
+        
+        .alert-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+        
+        .alert-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        
+        .alert-warning {
+            background-color: var(--warning-color);
+            color: #212529;
+        }
+        
+        .alert-info {
+            background-color: var(--info-color);
+            color: white;
+        }
+        
+        /* Estilos para formularios */
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(22, 50, 91, 0.25);
+        }
+        
+        /* Animaciones para mensajes */
+        @keyframes fadeInRight {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .fade-in-right {
+            animation: fadeInRight 0.3s ease-out;
+        }
+        
+        /* Colores para bordes y acentos */
+        .border-primary {
+            border-color: var(--primary-color) !important;
+        }
+        
+        .border-secondary {
+            border-color: var(--secondary-color) !important;
+        }
+        
+        /* Cards personalizadas */
+        .card-header.bg-primary {
+            background-color: var(--primary-color) !important;
+            color: white;
+        }
+        
+        .card-header.bg-secondary {
+            background-color: var(--secondary-color) !important;
+            color: white;
+        }
+    </style>
+    
+    <!-- Bloque para CSS adicional -->
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Barra de navegación -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <span class="navbar-brand" href="#">
+                <i class="fas fa-graduation-cap me-2"></i>GSPG
+            </span>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'gspg:dashboard' %}">
+                            <i class="fa-solid fa-grip me-1"></i>Panel
+                        </a>
+                    </li>
+                    <!-- Aquí puedes añadir más elementos de navegación para usuarios autenticados -->
+                    {% endif %}
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    {% if user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-1"></i>{{ user.get_full_name|default:user.email }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li><a class="dropdown-item" href="{% url 'profile' %}"><i class="fas fa-id-card me-2"></i>Mi Perfil</a></li>
+                            {% if user.is_staff %}
+                            <li><a class="dropdown-item" href="{% url 'admin:index' %}"><i class="fas fa-cogs me-2"></i>Administración</a></li>
+                            {% endif %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión</a></li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'login' %}"><i class="fas fa-sign-in-alt me-1"></i>Iniciar Sesión</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'register' %}"><i class="fas fa-user-plus me-1"></i>Registrarse</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenedor para mensajes -->
+    <div class="alert-container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show fade-in-right" role="alert">
+                    {% if message.tags == 'success' %}
+                        <i class="fas fa-check-circle me-2"></i>
+                    {% elif message.tags == 'error' or message.tags == 'danger' %}
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                    {% elif message.tags == 'warning' %}
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                    {% elif message.tags == 'info' %}
+                        <i class="fas fa-info-circle me-2"></i>
+                    {% endif %}
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <!-- Contenido principal -->
+    <main class="main-content py-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Pie de página -->
+    <footer class="footer text-center">
+        <div class="container">
+            {% if user_magister %}
+                <p class="mb-0">&copy; {% now "Y" %} Magíster en {{ user_magister.name }} - {{ user_magister.university }}</p>
+            {% else %}
+                <p class="mb-0">&copy; {% now "Y" %} www.forgeapp.cl</p>
+            {% endif %}
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JavaScript Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Script para autocierre de alertas -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-cerrar alertas después de 5 segundos
+            const alerts = document.querySelectorAll('.alert-container .alert');
+            alerts.forEach(function(alert) {
+                setTimeout(function() {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }, 5000);
+            });
+        });
+    </script>
+    
+    <!-- Bloque para JavaScript adicional -->
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

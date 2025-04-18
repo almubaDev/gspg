@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+
+{% block title %}Reuniones - {{ grupo.nombre }} - Gestión de Procesos de Grado{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col d-flex justify-content-between align-items-center">
+            <h1 class="h3 mb-0">
+                <i class="fas fa-calendar-alt me-2 text-primary"></i>Reuniones - {{ grupo.nombre }}
+            </h1>
+            <div>
+                <a href="{% url 'gspg:grupo_trabajo_detail' grupo.pk %}" class="btn btn-secondary me-2">
+                    <i class="fas fa-arrow-left me-1"></i>Volver al Grupo
+                </a>
+                {% if not grupo.finalizado %}
+                <a href="{% url 'gspg:reunion_create' grupo.pk %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>Nueva Reunión
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Reuniones Futuras -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-calendar-day me-2"></i>Próximas Reuniones
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if reuniones_futuras %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Hora</th>
+                                    <th>Estado</th>
+                                    <th>Link</th>
+                                    <th>Comentarios</th>
+                                    {% if not grupo.finalizado %}
+                                    <th>Acciones</th>
+                                    {% endif %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for reunion in reuniones_futuras %}
+                                <tr>
+                                    <td>{{ reunion.fecha|date:"d/m/Y" }}</td>
+                                    <td>{{ reunion.hora|time:"H:i" }}</td>
+                                    <td>
+                                        {% if reunion.estado == 'programada' %}
+                                            <span class="badge bg-primary">Programada</span>
+                                        {% elif reunion.estado == 'reprogramada' %}
+                                            <span class="badge bg-warning">Reprogramada</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if reunion.link_reunion %}
+                                        <a href="{{ reunion.link_reunion }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-video me-1"></i>Unirse
+                                        </a>
+                                        {% else %}
+                                        <span class="text-muted">No disponible</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ reunion.comentario|default:"-"|truncatewords:10 }}</td>
+                                    {% if not grupo.finalizado %}
+                                    <td>
+                                        <a href="{% url 'gspg:reunion_edit' reunion.pk %}" class="btn btn-sm btn-outline-secondary me-1" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{% url 'gspg:reunion_delete' reunion.pk %}" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </td>
+                                    {% endif %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>No hay reuniones programadas. 
+                        {% if not grupo.finalizado %}
+                        <a href="{% url 'gspg:reunion_create' grupo.pk %}" class="alert-link">Programa una reunión</a>.
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Reuniones Pasadas -->
+    {% if reuniones_pasadas %}
+    <div class="row">
+        <div class="col">
+            <div class="card shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-history me-2"></i>Reuniones Pasadas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Hora</th>
+                                    <th>Estado</th>
+                                    <th>Link</th>
+                                    <th>Comentarios</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for reunion in reuniones_pasadas %}
+                                <tr>
+                                    <td>{{ reunion.fecha|date:"d/m/Y" }}</td>
+                                    <td>{{ reunion.hora|time:"H:i" }}</td>
+                                    <td>
+                                        {% if reunion.estado == 'programada' %}
+                                            <span class="badge bg-primary">Programada</span>
+                                        {% elif reunion.estado == 'reprogramada' %}
+                                            <span class="badge bg-warning">Reprogramada</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if reunion.link_reunion %}
+                                        <a href="{{ reunion.link_reunion }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-link me-1"></i>Ver link
+                                        </a>
+                                        {% else %}
+                                        <span class="text-muted">No disponible</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ reunion.comentario|default:"-"|truncatewords:10 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

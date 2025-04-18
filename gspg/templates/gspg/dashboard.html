@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Gestión de Procesos de Grado{% endblock %}
+
+{% block extra_css %}
+<style>
+    .tool-card {
+        transition: transform 0.3s;
+        border-radius: 10px;
+        overflow: hidden;
+        height: 100%;
+    }
+    
+    .tool-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .tool-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .card-link-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 10;
+    }
+    
+    .magister-info {
+        background-color: rgba(22, 50, 91, 0.05);
+        border-left: 4px solid var(--primary-color);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h3 mb-0 text-primary">
+                <i class="fa-solid fa-grip me-2"></i>Panel de Herramientas
+            </h1>
+            <p class="text-muted">Sistema de Gestión y Seguimiento para Procesos de Grado</p>
+        </div>
+    </div>
+    
+    {% if user_magister %}
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card magister-info">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-graduation-cap me-2 text-primary"></i>Información de Programas
+                    </h5>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <p class="mb-1"><strong>Programa:</strong> {{ user_magister.name }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p class="mb-1"><strong>Facultad:</strong> {{ user_magister.faculty }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p class="mb-1"><strong>Universidad:</strong> {{ user_magister.university }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="row mb-4">
+        <div class="col">
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>No tienes un programa asignado. Por favor, contacta al administrador.
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="row">
+        <!-- Tarjeta de Intakes -->
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card tool-card shadow-sm">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <i class="fa-solid fa-layer-group tool-icon"></i>
+                    <h5 class="card-title mb-0">Intakes</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Administra los grupos de cursos por período</p>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'gspg:intake_list' %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-arrow-right me-1"></i>Acceder
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tarjeta de Estudiantes -->
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card tool-card shadow-sm">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <i class="fas fa-user-graduate tool-icon"></i>
+                    <h5 class="card-title mb-0">Estudiantes</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Gestión de estudiantes en proceso de grado</p>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'gspg:estudiante_list' %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-arrow-right me-1"></i>Acceder
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tarjeta de Profesores -->
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card tool-card shadow-sm">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <i class="fas fa-chalkboard-teacher tool-icon"></i>
+                    <h5 class="card-title mb-0">Profesores</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Gestión de profesores guía y comisiones</p>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'gspg:profesor_list' %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-arrow-right me-1"></i>Acceder
+                    </a>
+                </div>
+            </div>
+        </div>
+        <!-- Tarjeta de Grupos de Trabajo -->
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card tool-card shadow-sm">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <i class="fas fa-users tool-icon"></i>
+                    <h5 class="card-title mb-0">Grupos de Trabajo</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Gestión de grupos de trabajo y procesos de grado</p>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'gspg:grupo_trabajo_list' %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-arrow-right me-1"></i>Acceder
+                    </a>
+                </div>
+            </div>
+        </div>
+        <!-- Aquí se pueden añadir más tarjetas para otras herramientas -->
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block title %}Finalizar Proceso de Grado - Gestión de Procesos de Grado{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h3 mb-0">
+                <i class="fas fa-check-circle me-2 text-success"></i>Finalizar Proceso de Grado
+            </h1>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <div class="mb-4">
+                        <i class="fas fa-graduation-cap text-success" style="font-size: 4rem;"></i>
+                    </div>
+                    <h4>¿Estás seguro?</h4>
+                    <p>Estás a punto de finalizar el proceso de grado para el grupo:</p>
+                    <p class="fs-5 fw-bold">{{ grupo.nombre }}</p>
+                    <p>Esta acción cambiará el estado de proceso de grado de todos los estudiantes a "Finalizado".</p>
+                    <p class="text-warning">Esta acción no se puede deshacer.</p>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-center gap-3">
+                            <a href="{% url 'gspg:grupo_trabajo_detail' grupo.pk %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-check-circle me-1"></i>Finalizar Proceso
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

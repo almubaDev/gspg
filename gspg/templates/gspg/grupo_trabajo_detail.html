@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalle de Grupo de Trabajo - Gestión de Procesos de Grado{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col d-flex justify-content-between align-items-center">
+            <h1 class="h3 mb-0">
+                <i class="fas fa-users me-2 text-primary"></i>Detalle de Grupo de Trabajo
+            </h1>
+            <div>
+                <a href="{% url 'gspg:grupo_trabajo_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Volver
+                </a>
+                {% if not grupo.finalizado %}
+                <a href="{% url 'gspg:grupo_trabajo_edit' grupo.pk %}" class="btn btn-primary">
+                    <i class="fas fa-edit me-1"></i>Editar
+                </a>
+                <a href="{% url 'gspg:reunion_list' grupo.pk %}" class="btn btn-info">
+                    <i class="fas fa-calendar-alt me-1"></i>Reuniones
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Información del grupo -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Información General
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Nombre:</div>
+                        <div class="col-md-8">{{ grupo.nombre }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Profesor:</div>
+                        <div class="col-md-8">{{ grupo.profesor.nombre }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Intake:</div>
+                        <div class="col-md-8">{{ grupo.intake.get_short_name }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Fecha inicio:</div>
+                        <div class="col-md-8">{{ grupo.fecha_inicio|date:"d/m/Y" }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Fecha fin:</div>
+                        <div class="col-md-8">{{ grupo.fecha_fin|date:"d/m/Y" }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Estado:</div>
+                        <div class="col-md-8">
+                            {% if grupo.finalizado %}
+                                <span class="badge bg-success">Finalizado</span>
+                            {% else %}
+                                <span class="badge bg-secondary">En proceso</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Estudiantes:</div>
+                        <div class="col-md-8">{{ grupo.estudiantes.count }} estudiante(s)</div>
+                    </div>
+                </div>
+                {% if grupo.observaciones %}
+                <div class="card-footer">
+                    <div class="fw-bold mb-2">Observaciones:</div>
+                    <p class="mb-0">{{ grupo.observaciones }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-user-graduate me-2"></i>Estudiantes
+                    </h5>
+                    {% if not grupo.finalizado %}
+                    <a href="{% url 'gspg:grupo_trabajo_add_estudiantes' grupo.pk %}" class="btn btn-light btn-sm">
+                        <i class="fas fa-plus me-1"></i>Añadir
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if grupo.estudiantes.exists %}
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>RUT</th>
+                                    <th>Nombre</th>
+                                    <th>Proceso</th>
+                                    {% if not grupo.finalizado %}
+                                    <th>Acción</th>
+                                    {% endif %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for estudiante in grupo.estudiantes.all %}
+                                <tr>
+                                    <td>{{ estudiante.rut }}</td>
+                                    <td>{{ estudiante.nombre_completo }}</td>
+                                    <td>
+                                        {% if estudiante.proceso_grado == 'pendiente' %}
+                                            <span class="badge bg-warning">Pendiente</span>
+                                        {% elif estudiante.proceso_grado == 'proceso' %}
+                                            <span class="badge bg-secondary">En proceso</span>
+                                        {% elif estudiante.proceso_grado == 'finalizado' %}
+                                            <span class="badge bg-success">Finalizado</span>
+                                        {% endif %}
+                                    </td>
+                                    {% if not grupo.finalizado %}
+                                    <td>
+                                        <a href="{% url 'gspg:grupo_trabajo_remove_estudiante' grupo.pk estudiante.pk %}" class="btn btn-outline-danger btn-sm">
+                                            <i class="fas fa-times"></i>
+                                        </a>
+                                    </td>
+                                    {% endif %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>No hay estudiantes asignados a este grupo.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Botones de acción -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body d-flex justify-content-between">
+                    <div>
+                        {% if not grupo.finalizado %}
+                        <a href="{% url 'gspg:grupo_trabajo_delete' grupo.pk %}" class="btn btn-danger">
+                            <i class="fas fa-trash me-1"></i>Eliminar Grupo
+                        </a>
+                        {% endif %}
+                    </div>
+                    <div>
+                        {% if puede_finalizar %}
+                        <a href="{% url 'gspg:grupo_trabajo_finalizar' grupo.pk %}" class="btn btn-success">
+                            <i class="fas fa-check-circle me-1"></i>Finalizar Proceso de Grado
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
