@@ -6,4 +6,5 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('profile/', views.profile_view, name='profile'),
+    path('set-active-programa/<int:magister_id>/', views.set_active_programa, name='set_active_programa'),
 ]

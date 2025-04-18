@@ -1,0 +1,22 @@
+{% if user.is_authenticated and user_magisteres %}
+<div class="dropdown">
+    <button class="btn btn-light dropdown-toggle" type="button" id="programaDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="fas fa-graduation-cap me-1"></i>
+        {% if user_magister %}
+            {{ user_magister.name }}
+        {% else %}
+            Seleccionar Programa
+        {% endif %}
+    </button>
+    <ul class="dropdown-menu" aria-labelledby="programaDropdown">
+        {% for magister in user_magisteres %}
+        <li>
+            <a class="dropdown-item {% if user_magister.id == magister.id %}active{% endif %}" 
+               href="{% url 'set_active_programa' magister.id %}">
+                {{ magister.name }} - {{ magister.university }}
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}

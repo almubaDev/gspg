@@ -18,30 +18,35 @@ from .forms import (IntakeForm, EstudianteForm, EstudianteBulkUploadForm, Profes
 @login_required
 def dashboard(request):
     """Vista principal del dashboard"""
-    # Mostrar solo los intakes del magister del usuario actual
-    user_magister = request.user.magister
+    # Mostrar solo los intakes del magister activo del usuario
+    user_magister = None
+    if hasattr(request.user, 'active_magister'):
+        user_magister = request.user.active_magister
     
     context = {
         'page_title': 'Dashboard',
         'user_magister': user_magister,
     }
     
-    # Si el usuario tiene un magister asignado, añadir los intakes disponibles
+    # Si el usuario tiene un magister activo, añadir los intakes disponibles
     if user_magister:
         intakes = Intake.objects.filter(magister=user_magister)
         context['intakes'] = intakes
+    # Si no tiene magister activo pero sí tiene magisteres asignados
+    elif hasattr(request.user, 'magisteres') and request.user.magisteres.exists():
+        messages.warning(request, "No tienes un programa activo. Por favor, selecciona uno de tus programas.")
         
     return render(request, 'gspg/dashboard.html', context)
 
 @login_required
 def intake_list(request):
     """Lista de Intakes"""
-    # Solo mostrar intakes relacionados con el magister del usuario
-    if not request.user.magister:
-        messages.warning(request, "No tienes un magíster asignado. Contacta al administrador.")
+    # Solo mostrar intakes relacionados con el magister activo del usuario
+    if not hasattr(request.user, 'active_magister') or not request.user.active_magister:
+        messages.warning(request, "No tienes un programa activo. Por favor, selecciona uno.")
         return redirect('gspg:dashboard')
     
-    intakes = Intake.objects.filter(magister=request.user.magister)
+    intakes = Intake.objects.filter(magister=request.user.active_magister)
     
     context = {
         'page_title': 'Intakes',
@@ -52,8 +57,8 @@ def intake_list(request):
 @login_required
 def intake_create(request):
     """Crear nuevo Intake"""
-    if not request.user.magister:
-        messages.warning(request, "No tienes un magíster asignado. Contacta al administrador.")
+    if not hasattr(request.user, 'active_magister') or not request.user.active_magister:
+        messages.warning(request, "No tienes un programa activo. Por favor, selecciona uno.")
         return redirect('gspg:dashboard')
     
     if request.method == 'POST':
@@ -62,7 +67,7 @@ def intake_create(request):
         if form.is_valid():
             # Asegurarse de que el magister sea el del usuario actual
             intake = form.save(commit=False)
-            intake.magister = request.user.magister
+            intake.magister = request.user.active_magister
             
             try:
                 intake.save()
@@ -82,12 +87,12 @@ def intake_create(request):
 @login_required
 def intake_edit(request, pk):
     """Editar Intake existente"""
-    if not request.user.magister:
-        messages.warning(request, "No tienes un magíster asignado. Contacta al administrador.")
+    if not hasattr(request.user, 'active_magister') or not request.user.active_magister:
+        messages.warning(request, "No tienes un programa activo. Por favor, selecciona uno.")
         return redirect('gspg:dashboard')
     
-    # Obtener el intake y verificar que pertenezca al magister del usuario
-    intake = get_object_or_404(Intake, pk=pk, magister=request.user.magister)
+    # Obtener el intake y verificar que pertenezca al magister activo del usuario
+    intake = get_object_or_404(Intake, pk=pk, magister=request.user.active_magister)
     
     if request.method == 'POST':
         form = IntakeForm(request.POST, instance=intake, user=request.user)
@@ -112,12 +117,12 @@ def intake_edit(request, pk):
 @login_required
 def intake_delete(request, pk):
     """Eliminar Intake"""
-    if not request.user.magister:
-        messages.warning(request, "No tienes un magíster asignado. Contacta al administrador.")
+    if not hasattr(request.user, 'active_magister') or not request.user.active_magister:
+        messages.warning(request, "No tienes un programa activo. Por favor, selecciona uno.")
         return redirect('gspg:dashboard')
     
-    # Obtener el intake y verificar que pertenezca al magister del usuario
-    intake = get_object_or_404(Intake, pk=pk, magister=request.user.magister)
+    # Obtener el intake y verificar que pertenezca al magister activo del usuario
+    intake = get_object_or_404(Intake, pk=pk, magister=request.user.active_magister)
     
     if request.method == 'POST':
         try:
@@ -137,8 +142,8 @@ def intake_delete(request, pk):
 @login_required
 def estudiante_list(request):
     """Lista de Estudiantes"""
-    if not request.user.magister:
-        messages.warning(request, "No tienes un magíster asignado. Contacta al administrador.")
+    if not hasattr(request.user, 'active_magister') or not request.user.active_magister:
+        messages.warning(request, "No tienes un programa activo. Por favor, selecciona uno.")
         return redirect('gspg:dashboard')
     
     # Filtro por intake, estado y proceso de grado
@@ -147,8 +152,8 @@ def estudiante_list(request):
     proceso_grado = request.GET.get('proceso_grado', '')  # Nuevo filtro
     search = request.GET.get('search', '')
     
-    # Obtener estudiantes del magíster del usuario
-    estudiantes = Estudiante.objects.filter(intake__magister=request.user.magister)
+    # Obtener estudiantes del magíster activo del usuario
+    estudiantes = Estudiante.objects.filter(intake__magister=request.user.active_magister)
     
     # Aplicar filtros adicionales
     if intake_id:
@@ -170,7 +175,7 @@ def estudiante_list(request):
     page_obj = paginator.get_page(page_number)
     
     # Obtener intakes para el filtro
-    intakes = Intake.objects.filter(magister=request.user.magister)
+    intakes = Intake.objects.filter(magister=request.user.active_magister)
     
     context = {
         'page_title': 'Estudiantes',
@@ -188,8 +193,8 @@ def estudiante_list(request):
 @login_required
 def estudiante_create(request):
     """Crear nuevo Estudiante"""
-    if not request.user.magister:
-        messages.warning(request, "No tienes un magíster asignado. Contacta al administrador.")
+    if not hasattr(request.user, 'active_magister') or not request.user.active_magister:
+        messages.warning(request, "No tienes un programa activo. Por favor, selecciona uno.")
         return redirect('gspg:dashboard')
     
     if request.method == 'POST':
@@ -197,10 +202,10 @@ def estudiante_create(request):
         
         if form.is_valid():
             try:
-                # Verificar que el intake pertenezca al magíster del usuario
+                # Verificar que el intake pertenezca al magíster activo del usuario
                 intake = form.cleaned_data['intake']
-                if intake.magister != request.user.magister:
-                    messages.error(request, "El intake seleccionado no pertenece a tu magíster.")
+                if intake.magister != request.user.active_magister:
+                    messages.error(request, "El intake seleccionado no pertenece a tu programa activo.")
                     return redirect('gspg:estudiante_list')
                 
                 form.save()
@@ -220,22 +225,22 @@ def estudiante_create(request):
 @login_required
 def estudiante_edit(request, pk):
     """Editar Estudiante existente"""
-    if not request.user.magister:
-        messages.warning(request, "No tienes un magíster asignado. Contacta al administrador.")
+    if not hasattr(request.user, 'active_magister') or not request.user.active_magister:
+        messages.warning(request, "No tienes un programa activo. Por favor, selecciona uno.")
         return redirect('gspg:dashboard')
     
-    # Obtener el estudiante y verificar que pertenezca al magister del usuario
-    estudiante = get_object_or_404(Estudiante, pk=pk, intake__magister=request.user.magister)
+    # Obtener el estudiante y verificar que pertenezca al magister activo del usuario
+    estudiante = get_object_or_404(Estudiante, pk=pk, intake__magister=request.user.active_magister)
     
     if request.method == 'POST':
         form = EstudianteForm(request.POST, instance=estudiante, user=request.user)
         
         if form.is_valid():
             try:
-                # Verificar que el intake pertenezca al magíster del usuario
+                # Verificar que el intake pertenezca al magíster activo del usuario
                 intake = form.cleaned_data['intake']
-                if intake.magister != request.user.magister:
-                    messages.error(request, "El intake seleccionado no pertenece a tu magíster.")
+                if intake.magister != request.user.active_magister:
+                    messages.error(request, "El intake seleccionado no pertenece a tu programa activo.")
                     return redirect('gspg:estudiante_list')
                 
                 form.save()
@@ -256,12 +261,12 @@ def estudiante_edit(request, pk):
 @login_required
 def estudiante_delete(request, pk):
     """Eliminar Estudiante"""
-    if not request.user.magister:
-        messages.warning(request, "No tienes un magíster asignado. Contacta al administrador.")
+    if not hasattr(request.user, 'active_magister') or not request.user.active_magister:
+        messages.warning(request, "No tienes un programa activo. Por favor, selecciona uno.")
         return redirect('gspg:dashboard')
     
-    # Obtener el estudiante y verificar que pertenezca al magister del usuario
-    estudiante = get_object_or_404(Estudiante, pk=pk, intake__magister=request.user.magister)
+    # Obtener el estudiante y verificar que pertenezca al magister activo del usuario
+    estudiante = get_object_or_404(Estudiante, pk=pk, intake__magister=request.user.active_magister)
     
     if request.method == 'POST':
         try:
@@ -280,8 +285,8 @@ def estudiante_delete(request, pk):
 @login_required
 def estudiante_bulk_upload(request):
     """Carga masiva de estudiantes desde Excel"""
-    if not request.user.magister:
-        messages.warning(request, "No tienes un magíster asignado. Contacta al administrador.")
+    if not hasattr(request.user, 'active_magister') or not request.user.active_magister:
+        messages.warning(request, "No tienes un programa activo. Por favor, selecciona uno.")
         return redirect('gspg:dashboard')
     
     if request.method == 'POST':
@@ -291,9 +296,9 @@ def estudiante_bulk_upload(request):
             try:
                 intake = form.cleaned_data['intake']
                 
-                # Verificar que el intake pertenezca al magíster del usuario
-                if intake.magister != request.user.magister:
-                    messages.error(request, "El intake seleccionado no pertenece a tu magíster.")
+                # Verificar que el intake pertenezca al magíster activo del usuario
+                if intake.magister != request.user.active_magister:
+                    messages.error(request, "El intake seleccionado no pertenece a tu programa activo.")
                     return redirect('gspg:estudiante_list')
                 
                 # Procesar el DataFrame
@@ -370,8 +375,8 @@ def estudiante_bulk_upload(request):
 @login_required
 def estudiante_export_excel(request):
     """Exportar estudiantes a Excel"""
-    if not request.user.magister:
-        messages.warning(request, "No tienes un magíster asignado. Contacta al administrador.")
+    if not hasattr(request.user, 'active_magister') or not request.user.active_magister:
+        messages.warning(request, "No tienes un programa activo. Por favor, selecciona uno.")
         return redirect('gspg:dashboard')
     
     # Filtros (los mismos que en la lista)
@@ -380,8 +385,8 @@ def estudiante_export_excel(request):
     proceso_grado = request.GET.get('proceso_grado', '')
     search = request.GET.get('search', '')
     
-    # Obtener estudiantes del magíster del usuario
-    estudiantes = Estudiante.objects.filter(intake__magister=request.user.magister)
+    # Obtener estudiantes del magíster activo del usuario
+    estudiantes = Estudiante.objects.filter(intake__magister=request.user.active_magister)
     
     # Aplicar filtros adicionales
     if intake_id:
@@ -467,8 +472,8 @@ def estudiante_export_excel(request):
 @login_required
 def estudiante_export_pdf(request):
     """Exportar estudiantes a PDF"""
-    if not request.user.magister:
-        messages.warning(request, "No tienes un magíster asignado. Contacta al administrador.")
+    if not hasattr(request.user, 'active_magister') or not request.user.active_magister:
+        messages.warning(request, "No tienes un programa activo. Por favor, selecciona uno.")
         return redirect('gspg:dashboard')
     
     # Filtros (los mismos que en la lista)
@@ -476,8 +481,8 @@ def estudiante_export_pdf(request):
     estado = request.GET.get('estado', '')
     search = request.GET.get('search', '')
     
-    # Obtener estudiantes del magíster del usuario
-    estudiantes = Estudiante.objects.filter(intake__magister=request.user.magister)
+    # Obtener estudiantes del magíster activo del usuario
+    estudiantes = Estudiante.objects.filter(intake__magister=request.user.active_magister)
     
     # Aplicar filtros adicionales
     if intake_id:
@@ -507,7 +512,7 @@ def estudiante_export_pdf(request):
     elements = []
     
     # Título
-    title = f"Lista de Estudiantes - {request.user.magister.name}"
+    title = f"Lista de Estudiantes - {request.user.active_magister.name}"
     
     # Datos para la tabla
     data = [['RUT', 'Nombre', 'Correo', 'Estado', 'Proceso Grado', 'Intake']]
@@ -571,12 +576,12 @@ def estudiante_export_pdf(request):
 @login_required
 def profesor_list(request):
     """Lista de Profesores"""
-    if not request.user.magister:
-        messages.warning(request, "No tienes un magíster asignado. Contacta al administrador.")
+    if not hasattr(request.user, 'active_magister') or not request.user.active_magister:
+        messages.warning(request, "No tienes un programa activo. Por favor, selecciona uno.")
         return redirect('gspg:dashboard')
     
-    # Buscar profesores relacionados con el magíster del usuario
-    profesores = Profesor.objects.filter(magisteres=request.user.magister)
+    # Buscar profesores relacionados con el magíster activo del usuario
+    profesores = Profesor.objects.filter(magisteres=request.user.active_magister)
     
     # Búsqueda por texto
     search = request.GET.get('search', '')
@@ -603,8 +608,8 @@ def profesor_list(request):
 @login_required
 def profesor_create(request):
     """Crear nuevo Profesor o asociarlo al magíster actual"""
-    if not request.user.magister:
-        messages.warning(request, "No tienes un magíster asignado. Contacta al administrador.")
+    if not hasattr(request.user, 'active_magister') or not request.user.active_magister:
+        messages.warning(request, "No tienes un programa activo. Por favor, selecciona uno.")
         return redirect('gspg:dashboard')
     
     if request.method == 'POST':
@@ -622,11 +627,11 @@ def profesor_create(request):
             
             if profesor_existente:
                 # Si el profesor ya existe, simplemente añadir el magíster actual
-                if request.user.magister not in profesor_existente.magisteres.all():
-                    profesor_existente.magisteres.add(request.user.magister)
-                    messages.success(request, f"El profesor {profesor_existente.nombre} ha sido asociado a tu magíster.")
+                if request.user.active_magister not in profesor_existente.magisteres.all():
+                    profesor_existente.magisteres.add(request.user.active_magister)
+                    messages.success(request, f"El profesor {profesor_existente.nombre} ha sido asociado a tu programa.")
                 else:
-                    messages.info(request, f"El profesor {profesor_existente.nombre} ya estaba asociado a tu magíster.")
+                    messages.info(request, f"El profesor {profesor_existente.nombre} ya estaba asociado a tu programa.")
                 
                 return redirect('gspg:profesor_list')
             else:
@@ -635,9 +640,9 @@ def profesor_create(request):
                 
                 try:
                     # Asociar al magíster actual
-                    profesor.magisteres.add(request.user.magister)
+                    profesor.magisteres.add(request.user.active_magister)
                     
-                    messages.success(request, "Profesor creado y asociado a tu magíster exitosamente.")
+                    messages.success(request, "Profesor creado y asociado a tu programa exitosamente.")
                     return redirect('gspg:profesor_list')
                 except Exception as e:
                     messages.error(request, f"Error al crear el profesor: {str(e)}")
@@ -653,12 +658,12 @@ def profesor_create(request):
 @login_required
 def profesor_edit(request, pk):
     """Editar Profesor existente"""
-    if not request.user.magister:
-        messages.warning(request, "No tienes un magíster asignado. Contacta al administrador.")
+    if not hasattr(request.user, 'active_magister') or not request.user.active_magister:
+        messages.warning(request, "No tienes un programa activo. Por favor, selecciona uno.")
         return redirect('gspg:dashboard')
     
-    # Obtener el profesor y verificar que pertenezca al magister del usuario
-    profesor = get_object_or_404(Profesor, pk=pk, magisteres=request.user.magister)
+    # Obtener el profesor y verificar que pertenezca al magister activo del usuario
+    profesor = get_object_or_404(Profesor, pk=pk, magisteres=request.user.active_magister)
     
     if request.method == 'POST':
         form = ProfesorForm(request.POST, instance=profesor)
@@ -683,23 +688,23 @@ def profesor_edit(request, pk):
 @login_required
 def profesor_delete(request, pk):
     """Desasociar Profesor del magíster actual"""
-    if not request.user.magister:
-        messages.warning(request, "No tienes un magíster asignado. Contacta al administrador.")
+    if not hasattr(request.user, 'active_magister') or not request.user.active_magister:
+        messages.warning(request, "No tienes un programa activo. Por favor, selecciona uno.")
         return redirect('gspg:dashboard')
     
-    # Obtener el profesor y verificar que pertenezca al magister del usuario
-    profesor = get_object_or_404(Profesor, pk=pk, magisteres=request.user.magister)
+    # Obtener el profesor y verificar que pertenezca al magister activo del usuario
+    profesor = get_object_or_404(Profesor, pk=pk, magisteres=request.user.active_magister)
     
     if request.method == 'POST':
         try:
             # No eliminamos el profesor, solo lo desasociamos del magíster actual
-            profesor.magisteres.remove(request.user.magister)
-            messages.success(request, f"El profesor {profesor.nombre} ha sido desasociado de tu magíster.")
+            profesor.magisteres.remove(request.user.active_magister)
+            messages.success(request, f"El profesor {profesor.nombre} ha sido desasociado de tu programa.")
             
             # Si el profesor ya no está asociado a ningún magíster, lo eliminamos
             if profesor.magisteres.count() == 0:
                 profesor.delete()
-                messages.info(request, f"El profesor {profesor.nombre} ha sido eliminado porque no estaba asociado a ningún otro magíster.")
+                messages.info(request, f"El profesor {profesor.nombre} ha sido eliminado porque no estaba asociado a ningún otro programa.")
                 
             return redirect('gspg:profesor_list')
         except Exception as e:
@@ -719,9 +724,9 @@ def get_estudiantes_por_intake(request):
     """Vista AJAX para obtener estudiantes disponibles por intake"""
     print("=== INICIANDO get_estudiantes_por_intake ===")
     
-    if not request.user.magister:
-        print("Error: Usuario sin magíster asignado")
-        return JsonResponse({'error': 'No tienes un magíster asignado'}, status=400)
+    if not hasattr(request.user, 'active_magister') or not request.user.active_magister:
+        print("Error: Usuario sin programa activo")
+        return JsonResponse({'error': 'No tienes un programa activo'}, status=400)
     
     intake_id = request.GET.get('intake_id')
     grupo_id = request.GET.get('grupo_id')
@@ -733,16 +738,16 @@ def get_estudiantes_por_intake(request):
         return JsonResponse({'error': 'No se proporcionó un intake'}, status=400)
     
     try:
-        # Verificar que el intake pertenezca al magíster del usuario
+        # Verificar que el intake pertenezca al magíster activo del usuario
         intake = Intake.objects.get(pk=intake_id)
         
         print(f"Intake encontrado: {intake} (ID: {intake.id})")
         print(f"Magíster del intake: {intake.magister.name} (ID: {intake.magister.id})")
-        print(f"Magíster del usuario: {request.user.magister.name} (ID: {request.user.magister.id})")
+        print(f"Magíster activo del usuario: {request.user.active_magister.name} (ID: {request.user.active_magister.id})")
         
-        if intake.magister != request.user.magister:
-            print("Error: El intake no pertenece al magíster del usuario")
-            return JsonResponse({'error': 'El intake no pertenece a tu magíster'}, status=403)
+        if intake.magister != request.user.active_magister:
+            print("Error: El intake no pertenece al programa activo del usuario")
+            return JsonResponse({'error': 'El intake no pertenece a tu programa activo'}, status=403)
         
         # Estudiantes que pertenecen a este intake específico
         todos_estudiantes = Estudiante.objects.filter(intake=intake)
@@ -821,8 +826,8 @@ def get_estudiantes_por_intake(request):
 @login_required
 def grupo_trabajo_list(request):
     """Lista de Grupos de Trabajo"""
-    if not request.user.magister:
-        messages.warning(request, "No tienes un magíster asignado. Contacta al administrador.")
+    if not hasattr(request.user, 'active_magister') or not request.user.active_magister:
+        messages.warning(request, "No tienes un programa activo. Por favor, selecciona uno.")
         return redirect('gspg:dashboard')
     
     # Filtros
@@ -830,8 +835,8 @@ def grupo_trabajo_list(request):
     finalizado = request.GET.get('finalizado', '')
     search = request.GET.get('search', '')
     
-    # Obtener grupos de trabajo del magíster del usuario
-    grupos = GrupoTrabajo.objects.filter(magister=request.user.magister)
+    # Obtener grupos de trabajo del magíster activo del usuario
+    grupos = GrupoTrabajo.objects.filter(magister=request.user.active_magister)
     
     # Aplicar filtros adicionales
     if profesor_id:
@@ -851,7 +856,7 @@ def grupo_trabajo_list(request):
     page_obj = paginator.get_page(page_number)
     
     # Obtener profesores para el filtro
-    profesores = Profesor.objects.filter(magisteres=request.user.magister)
+    profesores = Profesor.objects.filter(magisteres=request.user.active_magister)
     
     context = {
         'page_title': 'Grupos de Trabajo',
@@ -866,8 +871,8 @@ def grupo_trabajo_list(request):
 @login_required
 def grupo_trabajo_create(request):
     """Crear nuevo Grupo de Trabajo"""
-    if not request.user.magister:
-        messages.warning(request, "No tienes un magíster asignado. Contacta al administrador.")
+    if not hasattr(request.user, 'active_magister') or not request.user.active_magister:
+        messages.warning(request, "No tienes un programa activo. Por favor, selecciona uno.")
         return redirect('gspg:dashboard')
     
     if request.method == 'POST':
@@ -875,16 +880,16 @@ def grupo_trabajo_create(request):
         
         if form.is_valid():
             try:
-                # Verificar que el profesor pertenezca al magíster del usuario
+                # Verificar que el profesor pertenezca al magíster activo del usuario
                 profesor = form.cleaned_data['profesor']
-                if request.user.magister not in profesor.magisteres.all():
-                    messages.error(request, "El profesor seleccionado no pertenece a tu magíster.")
+                if request.user.active_magister not in profesor.magisteres.all():
+                    messages.error(request, "El profesor seleccionado no pertenece a tu programa activo.")
                     return redirect('gspg:grupo_trabajo_list')
                 
-                # Verificar que el intake pertenezca al magíster del usuario
+                # Verificar que el intake pertenezca al magíster activo del usuario
                 intake = form.cleaned_data['intake']
-                if intake.magister != request.user.magister:
-                    messages.error(request, "El intake seleccionado no pertenece a tu magíster.")
+                if intake.magister != request.user.active_magister:
+                    messages.error(request, "El intake seleccionado no pertenece a tu programa activo.")
                     return redirect('gspg:grupo_trabajo_list')
                 
                 # Verificar que los estudiantes pertenezcan al intake seleccionado
@@ -896,7 +901,7 @@ def grupo_trabajo_create(request):
                 
                 # Crear el grupo de trabajo
                 grupo = form.save(commit=False)
-                grupo.magister = request.user.magister
+                grupo.magister = request.user.active_magister
                 grupo.save()
                 
                 # Guardar relaciones ManyToMany
@@ -920,12 +925,12 @@ def grupo_trabajo_create(request):
 @login_required
 def grupo_trabajo_edit(request, pk):
     """Editar Grupo de Trabajo existente"""
-    if not request.user.magister:
-        messages.warning(request, "No tienes un magíster asignado. Contacta al administrador.")
+    if not hasattr(request.user, 'active_magister') or not request.user.active_magister:
+        messages.warning(request, "No tienes un programa activo. Por favor, selecciona uno.")
         return redirect('gspg:dashboard')
     
-    # Obtener el grupo y verificar que pertenezca al magister del usuario
-    grupo = get_object_or_404(GrupoTrabajo, pk=pk, magister=request.user.magister)
+    # Obtener el grupo y verificar que pertenezca al magister activo del usuario
+    grupo = get_object_or_404(GrupoTrabajo, pk=pk, magister=request.user.active_magister)
     
     # Si el grupo está finalizado, no permitir edición
     if grupo.finalizado:
@@ -937,17 +942,17 @@ def grupo_trabajo_edit(request, pk):
         
         if form.is_valid():
             try:
-                # Verificar que el profesor pertenezca al magíster del usuario
+                # Verificar que el profesor pertenezca al magíster activo del usuario
                 profesor = form.cleaned_data['profesor']
-                if request.user.magister not in profesor.magisteres.all():
-                    messages.error(request, "El profesor seleccionado no pertenece a tu magíster.")
+                if request.user.active_magister not in profesor.magisteres.all():
+                    messages.error(request, "El profesor seleccionado no pertenece a tu programa activo.")
                     return redirect('gspg:grupo_trabajo_list')
                 
-                # Verificar que los estudiantes pertenezcan al magíster del usuario
+                # Verificar que los estudiantes pertenezcan al magíster activo del usuario
                 estudiantes = form.cleaned_data['estudiantes']
                 for estudiante in estudiantes:
-                    if estudiante.intake.magister != request.user.magister:
-                        messages.error(request, "Uno o más estudiantes no pertenecen a tu magíster.")
+                    if estudiante.intake.magister != request.user.active_magister:
+                        messages.error(request, "Uno o más estudiantes no pertenecen a tu programa activo.")
                         return redirect('gspg:grupo_trabajo_list')
                 
                 # Guardar cambios
@@ -970,12 +975,12 @@ def grupo_trabajo_edit(request, pk):
 @login_required
 def grupo_trabajo_detail(request, pk):
     """Ver detalles de un Grupo de Trabajo"""
-    if not request.user.magister:
-        messages.warning(request, "No tienes un magíster asignado. Contacta al administrador.")
+    if not hasattr(request.user, 'active_magister') or not request.user.active_magister:
+        messages.warning(request, "No tienes un programa activo. Por favor, selecciona uno.")
         return redirect('gspg:dashboard')
     
-    # Obtener el grupo y verificar que pertenezca al magister del usuario
-    grupo = get_object_or_404(GrupoTrabajo, pk=pk, magister=request.user.magister)
+    # Obtener el grupo y verificar que pertenezca al magister activo del usuario
+    grupo = get_object_or_404(GrupoTrabajo, pk=pk, magister=request.user.active_magister)
     
     # Verificar si el proceso puede ser finalizado (fecha actual >= fecha fin)
     from datetime import date
@@ -991,12 +996,12 @@ def grupo_trabajo_detail(request, pk):
 @login_required
 def grupo_trabajo_delete(request, pk):
     """Eliminar Grupo de Trabajo"""
-    if not request.user.magister:
-        messages.warning(request, "No tienes un magíster asignado. Contacta al administrador.")
+    if not hasattr(request.user, 'active_magister') or not request.user.active_magister:
+        messages.warning(request, "No tienes un programa activo. Por favor, selecciona uno.")
         return redirect('gspg:dashboard')
     
-    # Obtener el grupo y verificar que pertenezca al magister del usuario
-    grupo = get_object_or_404(GrupoTrabajo, pk=pk, magister=request.user.magister)
+    # Obtener el grupo y verificar que pertenezca al magister activo del usuario
+    grupo = get_object_or_404(GrupoTrabajo, pk=pk, magister=request.user.active_magister)
     
     if request.method == 'POST':
         try:
@@ -1019,12 +1024,12 @@ def grupo_trabajo_delete(request, pk):
 @login_required
 def grupo_trabajo_finalizar(request, pk):
     """Finalizar proceso de grado para un grupo"""
-    if not request.user.magister:
-        messages.warning(request, "No tienes un magíster asignado. Contacta al administrador.")
+    if not hasattr(request.user, 'active_magister') or not request.user.active_magister:
+        messages.warning(request, "No tienes un programa activo. Por favor, selecciona uno.")
         return redirect('gspg:dashboard')
     
-    # Obtener el grupo y verificar que pertenezca al magister del usuario
-    grupo = get_object_or_404(GrupoTrabajo, pk=pk, magister=request.user.magister)
+    # Obtener el grupo y verificar que pertenezca al magister activo del usuario
+    grupo = get_object_or_404(GrupoTrabajo, pk=pk, magister=request.user.active_magister)
     
     # Verificar si el proceso puede ser finalizado (fecha actual >= fecha fin)
     from datetime import date
@@ -1054,12 +1059,12 @@ def grupo_trabajo_finalizar(request, pk):
 @login_required
 def grupo_trabajo_add_estudiantes(request, pk):
     """Añadir estudiantes a un grupo existente"""
-    if not request.user.magister:
-        messages.warning(request, "No tienes un magíster asignado. Contacta al administrador.")
+    if not hasattr(request.user, 'active_magister') or not request.user.active_magister:
+        messages.warning(request, "No tienes un programa activo. Por favor, selecciona uno.")
         return redirect('gspg:dashboard')
     
-    # Obtener el grupo y verificar que pertenezca al magister del usuario
-    grupo = get_object_or_404(GrupoTrabajo, pk=pk, magister=request.user.magister)
+    # Obtener el grupo y verificar que pertenezca al magister activo del usuario
+    grupo = get_object_or_404(GrupoTrabajo, pk=pk, magister=request.user.active_magister)
     
     # Si el grupo está finalizado, no permitir añadir estudiantes
     if grupo.finalizado:
@@ -1097,12 +1102,12 @@ def grupo_trabajo_add_estudiantes(request, pk):
 @login_required
 def grupo_trabajo_remove_estudiante(request, grupo_pk, estudiante_pk):
     """Eliminar un estudiante de un grupo"""
-    if not request.user.magister:
-        messages.warning(request, "No tienes un magíster asignado. Contacta al administrador.")
+    if not hasattr(request.user, 'active_magister') or not request.user.active_magister:
+        messages.warning(request, "No tienes un programa activo. Por favor, selecciona uno.")
         return redirect('gspg:dashboard')
     
-    # Obtener el grupo y verificar que pertenezca al magister del usuario
-    grupo = get_object_or_404(GrupoTrabajo, pk=grupo_pk, magister=request.user.magister)
+    # Obtener el grupo y verificar que pertenezca al magister activo del usuario
+    grupo = get_object_or_404(GrupoTrabajo, pk=grupo_pk, magister=request.user.active_magister)
     
     # Si el grupo está finalizado, no permitir eliminar estudiantes
     if grupo.finalizado:
@@ -1137,12 +1142,12 @@ def grupo_trabajo_remove_estudiante(request, grupo_pk, estudiante_pk):
 @login_required
 def reunion_list(request, grupo_pk):
     """Lista de Reuniones de un Grupo"""
-    if not request.user.magister:
-        messages.warning(request, "No tienes un magíster asignado. Contacta al administrador.")
+    if not hasattr(request.user, 'active_magister') or not request.user.active_magister:
+        messages.warning(request, "No tienes un programa activo. Por favor, selecciona uno.")
         return redirect('gspg:dashboard')
     
-    # Obtener el grupo y verificar que pertenezca al magister del usuario
-    grupo = get_object_or_404(GrupoTrabajo, pk=grupo_pk, magister=request.user.magister)
+    # Obtener el grupo y verificar que pertenezca al magister activo del usuario
+    grupo = get_object_or_404(GrupoTrabajo, pk=grupo_pk, magister=request.user.active_magister)
     
     # Obtener las reuniones del grupo
     reuniones = ReunionGrupo.objects.filter(grupo=grupo)
@@ -1164,12 +1169,12 @@ def reunion_list(request, grupo_pk):
 @login_required
 def reunion_create(request, grupo_pk):
     """Crear nueva Reunión para un Grupo"""
-    if not request.user.magister:
-        messages.warning(request, "No tienes un magíster asignado. Contacta al administrador.")
+    if not hasattr(request.user, 'active_magister') or not request.user.active_magister:
+        messages.warning(request, "No tienes un programa activo. Por favor, selecciona uno.")
         return redirect('gspg:dashboard')
     
-    # Obtener el grupo y verificar que pertenezca al magister del usuario
-    grupo = get_object_or_404(GrupoTrabajo, pk=grupo_pk, magister=request.user.magister)
+    # Obtener el grupo y verificar que pertenezca al magister activo del usuario
+    grupo = get_object_or_404(GrupoTrabajo, pk=grupo_pk, magister=request.user.active_magister)
     
     # Verificar si el grupo está finalizado
     if grupo.finalizado:
@@ -1203,12 +1208,12 @@ def reunion_create(request, grupo_pk):
 @login_required
 def reunion_edit(request, reunion_pk):
     """Editar Reunión existente"""
-    if not request.user.magister:
-        messages.warning(request, "No tienes un magíster asignado. Contacta al administrador.")
+    if not hasattr(request.user, 'active_magister') or not request.user.active_magister:
+        messages.warning(request, "No tienes un programa activo. Por favor, selecciona uno.")
         return redirect('gspg:dashboard')
     
-    # Obtener la reunión y verificar que pertenezca al magister del usuario
-    reunion = get_object_or_404(ReunionGrupo, pk=reunion_pk, grupo__magister=request.user.magister)
+    # Obtener la reunión y verificar que pertenezca al magister activo del usuario
+    reunion = get_object_or_404(ReunionGrupo, pk=reunion_pk, grupo__magister=request.user.active_magister)
     grupo = reunion.grupo
     
     # Verificar si el grupo está finalizado
@@ -1246,12 +1251,12 @@ def reunion_edit(request, reunion_pk):
 @login_required
 def reunion_delete(request, reunion_pk):
     """Eliminar Reunión"""
-    if not request.user.magister:
-        messages.warning(request, "No tienes un magíster asignado. Contacta al administrador.")
+    if not hasattr(request.user, 'active_magister') or not request.user.active_magister:
+        messages.warning(request, "No tienes un programa activo. Por favor, selecciona uno.")
         return redirect('gspg:dashboard')
     
-    # Obtener la reunión y verificar que pertenezca al magister del usuario
-    reunion = get_object_or_404(ReunionGrupo, pk=reunion_pk, grupo__magister=request.user.magister)
+    # Obtener la reunión y verificar que pertenezca al magister activo del usuario
+    reunion = get_object_or_404(ReunionGrupo, pk=reunion_pk, grupo__magister=request.user.active_magister)
     grupo = reunion.grupo
     
     # Verificar si el grupo está finalizado

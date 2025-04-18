@@ -36,13 +36,23 @@ class CustomUser(AbstractUser):
     last_name = models.CharField(_('apellidos'), max_length=150)
     is_active = models.BooleanField(default=True)
     date_joined = models.DateTimeField(auto_now_add=True)
-    magister = models.ForeignKey(
+    
+    # Cambiamos ForeignKey por ManyToManyField
+    magisteres = models.ManyToManyField(
         Magister, 
-        on_delete=models.SET_NULL, 
-        null=True, 
+        verbose_name=_('magisteres'),
+        related_name='users',
+        blank=True
+    )
+    
+    # Añadimos campo para el magister activo
+    active_magister = models.ForeignKey(
+        Magister,
+        on_delete=models.SET_NULL,
+        null=True,
         blank=True,
-        verbose_name=_('magíster'),
-        related_name='users'
+        verbose_name=_('magister activo'),
+        related_name='active_users'
     )
 
     USERNAME_FIELD = 'email'
@@ -59,3 +69,11 @@ class CustomUser(AbstractUser):
 
     def get_full_name(self):
         return f"{self.first_name} {self.last_name}"
+    
+    def set_active_magister(self, magister_id):
+        """Establece el magister activo del usuario"""
+        if self.magisteres.filter(id=magister_id).exists():
+            self.active_magister_id = magister_id
+            self.save(update_fields=['active_magister'])
+            return True
+        return False

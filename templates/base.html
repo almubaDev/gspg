@@ -222,6 +222,9 @@
                 </ul>
                 <ul class="navbar-nav ms-auto">
                     {% if user.is_authenticated %}
+                    <!-- Selector de Programa -->
+                    {% include "programa_selector.html" %}
+                    
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-user-circle me-1"></i>{{ user.get_full_name|default:user.email }}
@@ -278,7 +281,7 @@
     <footer class="footer text-center">
         <div class="container">
             {% if user_magister %}
-                <p class="mb-0">&copy; {% now "Y" %} Magíster en {{ user_magister.name }} - {{ user_magister.university }}</p>
+                <p class="mb-0">&copy; {% now "Y" %} Programa en {{ user_magister.name }} - {{ user_magister.university }}</p>
             {% else %}
                 <p class="mb-0">&copy; {% now "Y" %} www.forgeapp.cl</p>
             {% endif %}

@@ -18,9 +18,9 @@ class IntakeForm(forms.ModelForm):
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
         # Si se proporciona un usuario, filtrar los magísteres disponibles
-        if user and user.magister:
-            self.fields['magister'].queryset = Magister.objects.filter(id=user.magister.id)
-            self.fields['magister'].initial = user.magister
+        if user and hasattr(user, 'active_magister') and user.active_magister:
+            self.fields['magister'].queryset = Magister.objects.filter(id=user.active_magister.id)
+            self.fields['magister'].initial = user.active_magister
             self.fields['magister'].widget.attrs['disabled'] = True
             self.fields['magister'].required = False  # Para que pase la validación de formulario aunque esté deshabilitado
         
@@ -35,8 +35,8 @@ class IntakeForm(forms.ModelForm):
         if 'magister' not in cleaned_data or not cleaned_data['magister']:
             if self.instance and self.instance.pk and self.instance.magister:
                 cleaned_data['magister'] = self.instance.magister
-            elif hasattr(self, 'user') and self.user and self.user.magister:
-                cleaned_data['magister'] = self.user.magister
+            elif hasattr(self, 'user') and self.user and hasattr(self.user, 'active_magister') and self.user.active_magister:
+                cleaned_data['magister'] = self.user.active_magister
         return cleaned_data
 
 class EstudianteForm(forms.ModelForm):
@@ -55,9 +55,9 @@ class EstudianteForm(forms.ModelForm):
     
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
-        # Si se proporciona un usuario, filtrar los intakes por su magíster
-        if user and user.magister:
-            self.fields['intake'].queryset = Intake.objects.filter(magister=user.magister)
+        # Si se proporciona un usuario, filtrar los intakes por su magíster activo
+        if user and hasattr(user, 'active_magister') and user.active_magister:
+            self.fields['intake'].queryset = Intake.objects.filter(magister=user.active_magister)
 
 class EstudianteBulkUploadForm(forms.Form):
     intake = forms.ModelChoiceField(
@@ -71,9 +71,9 @@ class EstudianteBulkUploadForm(forms.Form):
     
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
-        # Si se proporciona un usuario, filtrar los intakes por su magíster
-        if user and user.magister:
-            self.fields['intake'].queryset = Intake.objects.filter(magister=user.magister)
+        # Si se proporciona un usuario, filtrar los intakes por su magíster activo
+        if user and hasattr(user, 'active_magister') and user.active_magister:
+            self.fields['intake'].queryset = Intake.objects.filter(magister=user.active_magister)
     
     def clean_file(self):
         file = self.cleaned_data.get('file')
@@ -137,13 +137,16 @@ class GrupoTrabajoForm(forms.ModelForm):
             if self.instance.fecha_fin:
                 self.initial['fecha_fin'] = self.instance.fecha_fin.strftime('%Y-%m-%d')
         
-        # Si se proporciona un usuario, filtrar por su magíster
-        if user and user.magister:
-            self.fields['profesor'].queryset = Profesor.objects.filter(magisteres=user.magister)
-            self.fields['intake'].queryset = Intake.objects.filter(magister=user.magister)
+        # Guardar el usuario para usarlo en clean()
+        self.user = user
+        
+        # Si se proporciona un usuario con magister activo, filtrar por su magíster
+        if user and hasattr(user, 'active_magister') and user.active_magister:
+            self.fields['profesor'].queryset = Profesor.objects.filter(magisteres=user.active_magister)
+            self.fields['intake'].queryset = Intake.objects.filter(magister=user.active_magister)
             
             # Para edición
-            if self.instance.pk:
+            if self.instance and self.instance.pk:
                 self.fields['intake'].widget.attrs['disabled'] = True
                 self.fields['intake'].required = False
                 
@@ -157,7 +160,7 @@ class GrupoTrabajoForm(forms.ModelForm):
                 self.fields['estudiantes'].help_text = "Primero selecciona un intake para ver los estudiantes disponibles."
                 
             # Si el grupo está finalizado, no permitir cambios
-            if self.instance.pk and self.instance.finalizado:
+            if self.instance and self.instance.pk and self.instance.finalizado:
                 for field_name in self.fields:
                     self.fields[field_name].widget.attrs['disabled'] = True
                     self.fields[field_name].required = False
@@ -170,6 +173,11 @@ class GrupoTrabajoForm(forms.ModelForm):
             if self.instance and self.instance.pk and self.instance.intake:
                 cleaned_data['intake'] = self.instance.intake
         
+        # Si el magister no está especificado, usar el magister activo del usuario
+        if 'magister' not in cleaned_data or not cleaned_data.get('magister'):
+            if hasattr(self, 'user') and self.user and hasattr(self.user, 'active_magister') and self.user.active_magister:
+                cleaned_data['magister'] = self.user.active_magister
+        
         # Validar que la fecha de finalización sea posterior a la de inicio
         fecha_inicio = cleaned_data.get('fecha_inicio')
         fecha_fin = cleaned_data.get('fecha_fin')
@@ -178,7 +186,6 @@ class GrupoTrabajoForm(forms.ModelForm):
             self.add_error('fecha_fin', "La fecha de finalización debe ser posterior a la fecha de inicio.")
         
         return cleaned_data
-
 
 class EstudianteAddForm(forms.Form):
     estudiantes = forms.ModelMultipleChoiceField(
@@ -189,10 +196,10 @@ class EstudianteAddForm(forms.Form):
     
     def __init__(self, *args, user=None, grupo=None, **kwargs):
         super().__init__(*args, **kwargs)
-        if user and user.magister and grupo:
+        if user and hasattr(user, 'active_magister') and user.active_magister and grupo:
             # Filtrar estudiantes del mismo magíster que no están ya en este grupo
             self.fields['estudiantes'].queryset = Estudiante.objects.filter(
-                intake__magister=user.magister,
+                intake__magister=user.active_magister,
                 proceso_grado='pendiente'
             ).exclude(
                 pk__in=grupo.estudiantes.all()

@@ -10,15 +10,16 @@ class CustomUserCreationForm(UserCreationForm):
     Formulario para crear nuevos usuarios. Incluye todos los campos requeridos,
     más un campo repetido para verificación de contraseña.
     """
-    magister = forms.ModelChoiceField(
+    magisteres = forms.ModelMultipleChoiceField(
         queryset=Magister.objects.all(),
         required=False,
-        widget=forms.Select(attrs={'class': 'form-control'})
+        widget=forms.SelectMultiple(attrs={'class': 'form-control'}),
+        help_text="Selecciona los programas a los que tendrá acceso este usuario."
     )
     
     class Meta:
         model = CustomUser
-        fields = ('email', 'first_name', 'last_name', 'magister')
+        fields = ('email', 'first_name', 'last_name', 'magisteres')
         
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -36,15 +37,21 @@ class CustomUserChangeForm(UserChangeForm):
     """
     class Meta:
         model = CustomUser
-        fields = ('email', 'first_name', 'last_name', 'magister')
+        fields = ('email', 'first_name', 'last_name', 'magisteres', 'active_magister')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['email'].widget.attrs.update({'class': 'form-control'})
         self.fields['first_name'].widget.attrs.update({'class': 'form-control'})
         self.fields['last_name'].widget.attrs.update({'class': 'form-control'})
-        if 'magister' in self.fields:
-            self.fields['magister'].widget.attrs.update({'class': 'form-control'})
+        if 'magisteres' in self.fields:
+            self.fields['magisteres'].widget.attrs.update({'class': 'form-control'})
+        if 'active_magister' in self.fields:
+            self.fields['active_magister'].widget.attrs.update({'class': 'form-control'})
+            self.fields['active_magister'].queryset = Magister.objects.all()
+            # Si el usuario ya tiene magisteres, filtrar el active_magister por esos magisteres
+            if self.instance.pk and self.instance.magisteres.exists():
+                self.fields['active_magister'].queryset = self.instance.magisteres.all()
 
 
 class LoginForm(forms.Form):
