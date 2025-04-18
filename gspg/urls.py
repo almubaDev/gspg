@@ -5,6 +5,8 @@ app_name = 'gspg'
 
 urlpatterns = [
     path('', views.dashboard, name='dashboard'),
+    path('set-programa/<int:magister_id>/', views.set_active_programa, name='set_active_programa'),
+
     
     # Rutas para Intakes
     path('intakes/', views.intake_list, name='intake_list'),

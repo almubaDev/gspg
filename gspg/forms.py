@@ -1,6 +1,6 @@
 from django import forms
 from django.db.models import Q
-from .models import Intake, Magister, Estudiante, Profesor, GrupoTrabajo, ReunionGrupo
+from .models import Intake, Magister, Estudiante, Profesor, GrupoTrabajo, ReunionGrupo, Persona
 import pandas as pd
 import openpyxl
 
@@ -39,66 +39,86 @@ class IntakeForm(forms.ModelForm):
                 cleaned_data['magister'] = self.user.active_magister
         return cleaned_data
 
-class EstudianteForm(forms.ModelForm):
+
+class PersonaForm(forms.ModelForm):
     class Meta:
-        model = Estudiante
-        fields = ['intake', 'rut', 'nombre_completo', 'telefono', 'correo_institucional', 'correo_personal', 'estado']
+        model = Persona
+        fields = [
+            'rut',
+            'nombre_completo',
+            'telefono',
+            'correo_institucional',
+            'correo_personal'
+        ]
         widgets = {
-            'intake': forms.Select(attrs={'class': 'form-control'}),
-            'rut': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Sin puntos ni guión'}),
+            'rut': forms.TextInput(attrs={'class': 'form-control'}),
             'nombre_completo': forms.TextInput(attrs={'class': 'form-control'}),
             'telefono': forms.TextInput(attrs={'class': 'form-control'}),
             'correo_institucional': forms.EmailInput(attrs={'class': 'form-control'}),
             'correo_personal': forms.EmailInput(attrs={'class': 'form-control'}),
-            'estado': forms.Select(attrs={'class': 'form-control'}),
         }
-    
+
+class EstudianteForm(forms.ModelForm):
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
-        # Si se proporciona un usuario, filtrar los intakes por su magíster activo
         if user and hasattr(user, 'active_magister') and user.active_magister:
             self.fields['intake'].queryset = Intake.objects.filter(magister=user.active_magister)
 
-class EstudianteBulkUploadForm(forms.Form):
-    intake = forms.ModelChoiceField(
-        queryset=Intake.objects.none(),
-        widget=forms.Select(attrs={'class': 'form-control'})
-    )
-    file = forms.FileField(
-        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': '.xlsx,.xls'}),
-        help_text="Archivo Excel con las columnas: rut, nombre_completo, telefono, correo_institucional, correo_personal, estado"
-    )
-    
+    class Meta:
+        model = Estudiante
+        fields = ['intake', 'estado', 'proceso_grado']
+        widgets = {
+            'intake': forms.Select(attrs={'class': 'form-control'}),
+            'estado': forms.Select(attrs={'class': 'form-control'}),
+            'proceso_grado': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+
+class EstudianteCompletoForm(forms.Form):
+    rut = forms.CharField(label="RUT", widget=forms.TextInput(attrs={'class': 'form-control'}))
+    nombre_completo = forms.CharField(label="Nombre Completo", widget=forms.TextInput(attrs={'class': 'form-control'}))
+    telefono = forms.CharField(label="Teléfono", widget=forms.TextInput(attrs={'class': 'form-control'}))
+    correo_institucional = forms.EmailField(label="Correo Institucional", widget=forms.EmailInput(attrs={'class': 'form-control'}))
+    correo_personal = forms.EmailField(label="Correo Personal", required=False, widget=forms.EmailInput(attrs={'class': 'form-control'}))
+    intake = forms.ModelChoiceField(queryset=Intake.objects.none(), label="Intake", widget=forms.Select(attrs={'class': 'form-control'}))
+    estado = forms.ChoiceField(choices=Estudiante._meta.get_field('estado').choices, widget=forms.Select(attrs={'class': 'form-control'}))
+    proceso_grado = forms.ChoiceField(choices=Estudiante._meta.get_field('proceso_grado').choices, widget=forms.Select(attrs={'class': 'form-control'}))
+
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
-        # Si se proporciona un usuario, filtrar los intakes por su magíster activo
+        if user and hasattr(user, 'active_magister') and user.active_magister:
+            self.fields['intake'].queryset = Intake.objects.filter(magister=user.active_magiste)
+
+
+class EstudianteBulkUploadForm(forms.Form):
+    intake = forms.ModelChoiceField(queryset=Intake.objects.all(), label="Intake")
+    archivo_excel = forms.FileField(label="Archivo Excel", validators=[
+        FileExtensionValidator(allowed_extensions=['xls', 'xlsx'])
+    ])
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
         if user and hasattr(user, 'active_magister') and user.active_magister:
             self.fields['intake'].queryset = Intake.objects.filter(magister=user.active_magister)
-    
-    def clean_file(self):
-        file = self.cleaned_data.get('file')
-        if file:
-            # Verificar extensión
-            if not file.name.endswith(('.xlsx', '.xls')):
-                raise forms.ValidationError("El archivo debe ser un Excel (.xlsx o .xls)")
-            
-            try:
-                # Leer el archivo Excel
-                df = pd.read_excel(file)
-                
-                # Verificar columnas requeridas
-                required_columns = ['rut', 'nombre_completo', 'correo_institucional']
-                for col in required_columns:
-                    if col not in df.columns:
-                        raise forms.ValidationError(f"Falta la columna '{col}' en el archivo Excel")
-                
-                # Guardar el DataFrame para su uso posterior
-                self.cleaned_data['df'] = df
-                
-            except Exception as e:
-                raise forms.ValidationError(f"Error al procesar el archivo Excel: {str(e)}")
-            
-        return file
+
+    def clean_archivo_excel(self):
+        archivo = self.cleaned_data['archivo_excel']
+        try:
+            df = pd.read_excel(archivo)
+        except Exception:
+            raise ValidationError("El archivo no es un Excel válido.")
+
+        columnas_requeridas = [
+            'rut', 'nombre_completo', 'telefono',
+            'correo_institucional', 'correo_personal',
+            'estado', 'proceso_grado'
+        ]
+        for col in columnas_requeridas:
+            if col not in df.columns:
+                raise ValidationError(f"Falta la columna obligatoria: {col}")
+
+        self.cleaned_data['df'] = df
+        return archivo
 
 class ProfesorForm(forms.ModelForm):
     class Meta:

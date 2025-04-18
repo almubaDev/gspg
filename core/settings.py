@@ -54,8 +54,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'gspg.context_processors.user_magister',
-                'gspg.context_processors.user_magisteres',  # Añade esta línea
+                'gspg.context_processors.user_magister_context',
+
             ],
         },
     },
