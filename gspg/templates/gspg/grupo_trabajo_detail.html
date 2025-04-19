@@ -108,8 +108,8 @@
                             <tbody>
                                 {% for estudiante in grupo.estudiantes.all %}
                                 <tr>
-                                    <td>{{ estudiante.rut }}</td>
-                                    <td>{{ estudiante.nombre_completo }}</td>
+                                    <td>{{ estudiante.persona.rut }}</td>
+                                    <td>{{ estudiante.persona.nombre_completo }}</td>
                                     <td>
                                         {% if estudiante.proceso_grado == 'pendiente' %}
                                             <span class="badge bg-warning">Pendiente</span>

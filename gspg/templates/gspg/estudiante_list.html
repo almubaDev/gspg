@@ -116,11 +116,11 @@
                             <tbody>
                                 {% for estudiante in page_obj %}
                                 <tr>
-                                    <td>{{ estudiante.rut }}</td>
-                                    <td>{{ estudiante.nombre_completo }}</td>
+                                    <td>{{ estudiante.persona.rut }}</td>
+                                    <td>{{ estudiante.persona.nombre_completo }}</td>
                                     <td>{{ estudiante.intake.get_short_name }}</td>
-                                    <td>{{ estudiante.correo_institucional }}</td>
-                                    <td>{{ estudiante.telefono|default:"-" }}</td>
+                                    <td>{{ estudiante.persona.correo_institucional }}</td>
+                                    <td>{{ estudiante.persona.telefono|default:"-" }}</td>
                                     <td>
                                         {% if estudiante.estado == 'activo' %}
                                             <span class="text-success">Activo</span>

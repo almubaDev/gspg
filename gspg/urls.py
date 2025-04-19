@@ -4,7 +4,7 @@ from . import views
 app_name = 'gspg'
 
 urlpatterns = [
-    path('', views.dashboard, name='dashboard'),
+    path('dashboard/', views.dashboard, name='dashboard'),
     path('set-programa/<int:magister_id>/', views.set_active_programa, name='set_active_programa'),
 
     

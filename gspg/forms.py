@@ -1,5 +1,6 @@
 from django import forms
 from django.db.models import Q
+from django.core.validators import FileExtensionValidator
 from .models import Intake, Magister, Estudiante, Profesor, GrupoTrabajo, ReunionGrupo, Persona
 import pandas as pd
 import openpyxl

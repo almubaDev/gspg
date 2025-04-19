@@ -1,40 +1,67 @@
 from django.contrib import admin
-from .models import Magister, Intake, Estudiante, Profesor, GrupoTrabajo, ReunionGrupo
+from .models import Estudiante, Intake, Profesor, GrupoTrabajo, Persona, ReunionGrupo, Magister
+
+
 
 @admin.register(Magister)
 class MagisterAdmin(admin.ModelAdmin):
     list_display = ['name', 'faculty', 'university']
     search_fields = ['name', 'faculty', 'university']
-    list_filter = ['university', 'faculty']
-
-@admin.register(Intake)
-class IntakeAdmin(admin.ModelAdmin):
-    list_display = ['__str__', 'magister', 'year', 'month', 'section']
-    list_filter = ['magister', 'year', 'month']
-    search_fields = ['magister__name', 'year']
+    list_filter = ['university']
 
 @admin.register(Estudiante)
 class EstudianteAdmin(admin.ModelAdmin):
-    list_display = ['nombre_completo', 'rut', 'intake', 'correo_institucional', 'estado', 'proceso_grado']
+    list_display = [
+        'nombre_completo',
+        'rut',
+        'intake',
+        'correo_institucional',
+        'estado',
+        'proceso_grado',
+    ]
     list_filter = ['intake', 'estado', 'proceso_grado', 'intake__magister']
-    search_fields = ['nombre_completo', 'rut', 'correo_institucional', 'correo_personal']
+    search_fields = [
+        'persona__nombre_completo',
+        'persona__rut',
+        'persona__correo_institucional',
+        'persona__correo_personal',
+    ]
+
+    def rut(self, obj):
+        return obj.persona.rut
+
+    def nombre_completo(self, obj):
+        return obj.persona.nombre_completo
+
+    def correo_institucional(self, obj):
+        return obj.persona.correo_institucional
+
+    rut.admin_order_field = 'persona__rut'
+    nombre_completo.admin_order_field = 'persona__nombre_completo'
+    correo_institucional.admin_order_field = 'persona__correo_institucional'
+
+@admin.register(Intake)
+class IntakeAdmin(admin.ModelAdmin):
+    list_display = ['__str__', 'magister']
+    list_filter = ['magister']
 
 @admin.register(Profesor)
 class ProfesorAdmin(admin.ModelAdmin):
     list_display = ['nombre', 'rut', 'correo_institucional', 'telefono']
-    search_fields = ['nombre', 'rut', 'correo_institucional', 'correo_personal']
-    filter_horizontal = ['magisteres']
-    
+    search_fields = ['nombre', 'rut', 'correo_institucional']
+
 @admin.register(GrupoTrabajo)
 class GrupoTrabajoAdmin(admin.ModelAdmin):
-    list_display = ['nombre', 'profesor', 'magister', 'fecha_inicio', 'fecha_fin', 'finalizado']
-    list_filter = ['magister', 'finalizado', 'fecha_inicio']
-    search_fields = ['nombre', 'profesor__nombre', 'estudiantes__nombre_completo']
-    filter_horizontal = ['estudiantes']
-    
+    list_display = ['nombre', 'profesor', 'intake', 'finalizado']
+    list_filter = ['intake__magister', 'finalizado']
+    search_fields = ['nombre', 'profesor__nombre']
+
+@admin.register(Persona)
+class PersonaAdmin(admin.ModelAdmin):
+    list_display = ['rut', 'nombre_completo', 'correo_institucional', 'telefono']
+    search_fields = ['rut', 'nombre_completo', 'correo_institucional']
+
 @admin.register(ReunionGrupo)
 class ReunionGrupoAdmin(admin.ModelAdmin):
-    list_display = ['grupo', 'fecha', 'hora', 'estado', 'link_reunion']
-    list_filter = ['estado', 'fecha', 'grupo__magister']
-    search_fields = ['grupo__nombre', 'comentario']
-    date_hierarchy = 'fecha'
+    list_display = ['grupo', 'fecha', 'hora', 'link_reunion', 'estado']
+    list_filter = ['estado', 'grupo__intake__magister']

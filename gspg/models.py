@@ -8,8 +8,8 @@ class Magister(models.Model):
     university = models.CharField(max_length=200, verbose_name="Universidad")
 
     class Meta:
-        verbose_name = "Magíster"
-        verbose_name_plural = "Magísteres"
+        verbose_name = "Programa"
+        verbose_name_plural = "Programas"
         ordering = ['name']
 
     def __str__(self):
