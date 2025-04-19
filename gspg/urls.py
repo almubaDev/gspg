@@ -45,4 +45,5 @@ urlpatterns = [
     path('grupos/<int:grupo_pk>/reuniones/new/', views.reunion_create, name='reunion_create'),
     path('reuniones/<int:reunion_pk>/edit/', views.reunion_edit, name='reunion_edit'),
     path('reuniones/<int:reunion_pk>/delete/', views.reunion_delete, name='reunion_delete'),
+    path('reuniones/<int:reunion_id>/confirmar-asistencia/', views.confirmar_asistencia, name='confirmar_asistencia'),
 ]

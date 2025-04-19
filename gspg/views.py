@@ -11,9 +11,9 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.lib import colors
-from .models import Intake, Estudiante, Persona, Profesor, GrupoTrabajo, ReunionGrupo
+from .models import Intake, Estudiante, Persona, Profesor, GrupoTrabajo, ReunionGrupo, AsistenciaReunion
 from .forms import (IntakeForm, PersonaForm, EstudianteForm, EstudianteCompletoForm, EstudianteBulkUploadForm, ProfesorForm, GrupoTrabajoForm, 
-                    EstudianteAddForm, ReunionGrupoForm)
+                    EstudianteAddForm, ReunionGrupoForm, AsistenciaReunionForm)
 
 @login_required
 def dashboard(request):
@@ -1269,24 +1269,20 @@ def reunion_create(request, grupo_pk):
         messages.warning(request, "No tienes un programa activo. Por favor, selecciona uno.")
         return redirect('gspg:dashboard')
     
-    # Obtener el grupo y verificar que pertenezca al magister activo del usuario
     grupo = get_object_or_404(GrupoTrabajo, pk=grupo_pk, magister=request.user.active_magister)
     
-    # Verificar si el grupo está finalizado
     if grupo.finalizado:
         messages.warning(request, "No se pueden crear reuniones para un grupo finalizado.")
         return redirect('gspg:reunion_list', grupo_pk=grupo.pk)
     
     if request.method == 'POST':
-        form = ReunionGrupoForm(request.POST)
-        
+        form = ReunionGrupoForm(request.POST, request.FILES)
         if form.is_valid():
             try:
                 reunion = form.save(commit=False)
                 reunion.grupo = grupo
                 reunion.estado = 'programada'
                 reunion.save()
-                
                 messages.success(request, "Reunión creada exitosamente.")
                 return redirect('gspg:reunion_list', grupo_pk=grupo.pk)
             except Exception as e:
@@ -1301,6 +1297,7 @@ def reunion_create(request, grupo_pk):
     }
     return render(request, 'gspg/reunion_form.html', context)
 
+
 @login_required
 def reunion_edit(request, reunion_pk):
     """Editar Reunión existente"""
@@ -1308,27 +1305,21 @@ def reunion_edit(request, reunion_pk):
         messages.warning(request, "No tienes un programa activo. Por favor, selecciona uno.")
         return redirect('gspg:dashboard')
     
-    # Obtener la reunión y verificar que pertenezca al magister activo del usuario
     reunion = get_object_or_404(ReunionGrupo, pk=reunion_pk, grupo__magister=request.user.active_magister)
     grupo = reunion.grupo
     
-    # Verificar si el grupo está finalizado
     if grupo.finalizado:
         messages.warning(request, "No se pueden editar reuniones de un grupo finalizado.")
         return redirect('gspg:reunion_list', grupo_pk=grupo.pk)
     
     if request.method == 'POST':
-        form = ReunionGrupoForm(request.POST, instance=reunion)
-        
+        form = ReunionGrupoForm(request.POST, request.FILES, instance=reunion)
         if form.is_valid():
             try:
-                # Si cambia la fecha u hora, marcamos como reprogramada
                 if (reunion.fecha != form.cleaned_data['fecha'] or 
                     reunion.hora != form.cleaned_data['hora']):
                     reunion.estado = 'reprogramada'
-                    
                 form.save()
-                
                 messages.success(request, "Reunión actualizada exitosamente.")
                 return redirect('gspg:reunion_list', grupo_pk=grupo.pk)
             except Exception as e:
@@ -1374,6 +1365,50 @@ def reunion_delete(request, reunion_pk):
         'grupo': grupo,
     }
     return render(request, 'gspg/reunion_confirm_delete.html', context)
+
+
+@login_required
+def confirmar_asistencia(request, reunion_id):
+    """Permitir al estudiante confirmar asistencia a una reunión"""
+    reunion = get_object_or_404(ReunionGrupo, id=reunion_id)
+
+    # Verificar que el usuario tenga un magíster activo
+    if not hasattr(request.user, 'active_magister') or not request.user.active_magister:
+        messages.warning(request, "Debes tener un programa activo para confirmar asistencia.")
+        return redirect('gspg:dashboard')
+
+    # Verificar que el usuario sea un estudiante válido del grupo
+    try:
+        estudiante = Estudiante.objects.get(user=request.user, intake__magister=request.user.active_magister)
+    except Estudiante.DoesNotExist:
+        messages.error(request, "No estás registrado como estudiante en este programa.")
+        return redirect('gspg:dashboard')
+
+    asistencia, _ = AsistenciaReunion.objects.get_or_create(
+        reunion=reunion,
+        estudiante=estudiante
+    )
+
+    if request.method == 'POST':
+        form = AsistenciaReunionForm(request.POST, instance=asistencia)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Asistencia confirmada correctamente.")
+            return redirect('gspg:reunion_list', grupo_pk=reunion.grupo.pk)
+    else:
+        form = AsistenciaReunionForm(instance=asistencia)
+
+    context = {
+        'form': form,
+        'reunion': reunion,
+        'grupo': reunion.grupo,
+        'page_title': "Confirmar Asistencia",
+    }
+
+    return render(request, 'gspg/confirmar_asistencia.html', context)
+
+
+
 
 @login_required
 def set_active_programa(request, magister_id):

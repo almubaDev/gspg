@@ -19,7 +19,7 @@
         <div class="col-md-8 offset-md-2">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <form method="post">
+                    <form method="post"  enctype="multipart/form-data">
                         {% csrf_token %}
                         
                         {% if form.errors %}
@@ -53,6 +53,17 @@
                             <div class="text-danger">{{ form.link_reunion.errors }}</div>
                             {% endif %}
                             <div class="form-text">Enlace para la reunión virtual (opcional)</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.archivo_adjunto.id_for_label }}" class="form-label">
+                                {{ form.archivo_adjunto.label }}
+                            </label>
+                            {{ form.archivo_adjunto }}
+                            {% if form.archivo_adjunto.errors %}
+                            <div class="text-danger">{{ form.archivo_adjunto.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">Puedes adjuntar un acta, presentación u otro documento relevante (opcional).</div>
                         </div>
                         
                         <div class="mb-3">

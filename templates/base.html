@@ -1,3 +1,5 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -203,12 +205,14 @@
     <!-- Barra de navegación -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
-            <span class="navbar-brand" href="#">
+            <a class="navbar-brand d-flex align-items-center" href="#">
                 <i class="fas fa-graduation-cap me-2"></i>GSPG
-            </span>
+            </a>
+    
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
+    
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     {% if user.is_authenticated %}
@@ -217,39 +221,54 @@
                             <i class="fa-solid fa-grip me-1"></i>Panel
                         </a>
                     </li>
-                    <!-- Aquí puedes añadir más elementos de navegación para usuarios autenticados -->
                     {% endif %}
                 </ul>
-                <ul class="navbar-nav ms-auto">
+    
+                <ul class="navbar-nav ms-auto align-items-center">
+    
                     {% if user.is_authenticated %}
-                    <!-- Selector de Programa -->
-                    {% include "programa_selector.html" %}
-                    
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user-circle me-1"></i>{{ user.get_full_name|default:user.email }}
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                            <li><a class="dropdown-item" href="{% url 'users:profile' %}"><i class="fas fa-id-card me-2"></i>Mi Perfil</a></li>
-                            {% if user.is_staff %}
-                            <li><a class="dropdown-item" href="{% url 'admin:index' %}"><i class="fas fa-cogs me-2"></i>Administración</a></li>
-                            {% endif %}
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{% url 'users:logout' %}"><i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión</a></li>
-                        </ul>
-                    </li>
+                        <!-- Selector de programa -->
+                        <li class="nav-item">
+                            {% include "programa_selector.html" %}
+                        </li>
+    
+                        <!-- Usuario autenticado con dropdown -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-user-circle me-1"></i>{{ user.get_full_name|default:user.email }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                <li><a class="dropdown-item" href="{% url 'users:profile' %}"><i class="fas fa-id-card me-2"></i>Mi Perfil</a></li>
+                                {% if user.is_staff %}
+                                <li><a class="dropdown-item" href="{% url 'admin:index' %}"><i class="fas fa-cogs me-2"></i>Administración</a></li>
+                                {% endif %}
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{% url 'users:logout' %}"><i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión</a></li>
+                            </ul>
+                        </li>
+    
+                        <!-- Logo institucional a la derecha -->
+                        {% if logo_url_universidad %}
+                        <li class="nav-item d-flex align-items-center ms-3">
+                            <img src="{{ logo_url_universidad }}" alt="Logo Universidad" style="height: 32px; max-height: 2rem;">
+                        </li>
+                        {% endif %}
+    
                     {% else %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'users:login' %}"><i class="fas fa-sign-in-alt me-1"></i>Iniciar Sesión</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'users:register' %}"><i class="fas fa-user-plus me-1"></i>Registrarse</a>
-                    </li>
+                        <!-- Invitado (no autenticado) -->
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'users:login' %}"><i class="fas fa-sign-in-alt me-1"></i>Iniciar Sesión</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'users:register' %}"><i class="fas fa-user-plus me-1"></i>Registrarse</a>
+                        </li>
                     {% endif %}
+    
                 </ul>
             </div>
         </div>
     </nav>
+    
 
     <!-- Contenedor para mensajes -->
     <div class="alert-container">
@@ -278,15 +297,14 @@
     </main>
 
     <!-- Pie de página -->
-    <footer class="footer text-center">
-        <div class="container">
-            {% if user_magister %}
-                <p class="mb-0">&copy; {% now "Y" %} Programa en {{ user_magister.name }} - {{ user_magister.university }}</p>
-            {% else %}
-                <p class="mb-0">&copy; {% now "Y" %} www.forgeapp.cl</p>
-            {% endif %}
+
+    <footer class="mt-4 text-center text-muted small p-4">
+        <div class="d-flex justify-content-center align-items-center gap-2">
+            <p class="mb-0 me-2">Potenciado por</p>
+            <img src="{% static 'img/logo_forgeapp.png' %}" alt="Logo ForgeApp" class="img-fluid" style="height: 24px;">
         </div>
     </footer>
+
 
     <!-- Bootstrap 5 JavaScript Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

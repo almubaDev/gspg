@@ -61,7 +61,5 @@ class PersonaAdmin(admin.ModelAdmin):
     list_display = ['rut', 'nombre_completo', 'correo_institucional', 'telefono']
     search_fields = ['rut', 'nombre_completo', 'correo_institucional']
 
-@admin.register(ReunionGrupo)
 class ReunionGrupoAdmin(admin.ModelAdmin):
-    list_display = ['grupo', 'fecha', 'hora', 'link_reunion', 'estado']
-    list_filter = ['estado', 'grupo__intake__magister']
+    list_display = ('fecha', 'hora', 'link', 'comentarios')

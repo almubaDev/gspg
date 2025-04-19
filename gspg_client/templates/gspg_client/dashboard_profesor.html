@@ -1,0 +1,50 @@
+{% extends 'gspg_client/base.html' %}
+
+{% block title %}Dashboard Profesor{% endblock %}
+
+{% block content %}
+<div class="space-y-4">
+
+    <!-- Bienvenida -->
+    <div class="bg-white rounded-xl shadow p-4 text-sm">
+        <h2 class="text-base font-semibold text-[color:var(--color-principal)]">
+            ¡Hola {{ profesor.nombre }}!
+        </h2>
+        <p class="text-gray-600 mt-1">
+            Aquí puedes gestionar tus grupos de trabajo y reuniones programadas con tus estudiantes.
+        </p>
+    </div>
+
+    <!-- Reuniones próximas -->
+    <div class="bg-white rounded-xl shadow p-4">
+        <h3 class="text-sm font-medium text-gray-700 mb-2">Próximas reuniones</h3>
+
+        <ul class="divide-y divide-gray-100 text-sm">
+            {% for reunion in reuniones_proximas %}
+            <li class="py-2 flex justify-between items-center">
+                <span>{{ reunion.fecha|date:"d/m/Y" }} – {{ reunion.grupo.nombre }}</span>
+                <a href="#" class="text-[color:var(--color-principal)] text-xs">Ver</a>
+            </li>
+            {% empty %}
+            <li class="py-2 text-gray-400 text-center">No hay reuniones próximas.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Grupos -->
+    <div class="bg-white rounded-xl shadow p-4">
+        <h3 class="text-sm font-medium text-gray-700 mb-2">Mis grupos</h3>
+        <ul class="divide-y divide-gray-100 text-sm">
+            {% for grupo in grupos %}
+            <li class="py-2 flex justify-between items-center">
+                <span>{{ grupo.nombre }}</span>
+                <a href="#" class="text-[color:var(--color-principal)] text-xs">Ver</a>
+            </li>
+            {% empty %}
+            <li class="py-2 text-gray-400 text-center">No tienes grupos asignados.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+</div>
+{% endblock %}

@@ -1,7 +1,7 @@
 from django import forms
 from django.db.models import Q
 from django.core.validators import FileExtensionValidator
-from .models import Intake, Magister, Estudiante, Profesor, GrupoTrabajo, ReunionGrupo, Persona
+from .models import Intake, Magister, Estudiante, Profesor, GrupoTrabajo, ReunionGrupo, Persona, AsistenciaReunion
 import pandas as pd
 import openpyxl
 
@@ -227,13 +227,24 @@ class EstudianteAddForm(forms.Form):
             )
             
             
+
+
 class ReunionGrupoForm(forms.ModelForm):
     class Meta:
         model = ReunionGrupo
-        fields = ['fecha', 'hora', 'link_reunion', 'comentario']
+        fields = ['fecha', 'hora', 'link', 'comentarios', 'archivo_adjunto']
         widgets = {
-            'fecha': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'hora': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
-            'link_reunion': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://...'}),
-            'comentario': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'fecha': forms.DateInput(attrs={'type': 'date'}),
+            'hora': forms.TimeInput(attrs={'type': 'time'}),
+            'link': forms.URLInput(attrs={'placeholder': 'https://...'}),
+            'comentarios': forms.Textarea(attrs={'rows': 3}),
+        }
+
+
+class AsistenciaReunionForm(forms.ModelForm):
+    class Meta:
+        model = AsistenciaReunion
+        fields = ['asistio', 'comentario']
+        widgets = {
+            'comentario': forms.Textarea(attrs={'rows': 2}),
         }

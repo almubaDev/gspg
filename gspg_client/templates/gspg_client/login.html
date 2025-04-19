@@ -1,0 +1,59 @@
+{% extends 'gspg_client/base.html' %}
+{% load static %}
+
+{% block title %}Ingreso{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex flex-col items-center justify-center px-4 bg-gray-50">
+
+    <!-- Contenedor del formulario -->
+    <div class="w-full max-w-sm bg-white shadow-md rounded-xl p-6 space-y-4">
+
+        <!-- Logo GSPG -->
+        <div class="text-center">
+            <span class="text-2xl font-extrabold tracking-wide text-[color:var(--color-principal)]">GSPG</span>
+        </div>
+
+        <!-- Mensaje institucional -->
+        <h2 class="text-sm text-center font-semibold text-gray-700">
+            Bienvenidos al Sistema de Gestión y Seguimiento para Procesos de Grado de su Universidad
+        </h2>
+
+        {% if error %}
+            <div class="text-red-600 text-sm text-center">{{ error }}</div>
+        {% endif %}
+
+        <!-- Formulario -->
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+
+            <div>
+                <label for="correo" class="block text-sm text-gray-700">Correo</label>
+                <input type="email" name="correo" id="correo" required
+                    placeholder="Ingresa tu correo institucional"
+                    class="w-full mt-1 px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-blue-200 text-sm">
+            </div>
+
+            <div>
+                <label for="rut" class="block text-sm text-gray-700">RUT</label>
+                <input type="text" name="rut" id="rut" required
+                    placeholder="Ej: 12345678K (sin puntos ni guion)"
+                    class="w-full mt-1 px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-blue-200 text-sm">
+            </div>
+
+            <button type="submit"
+                class="w-full bg-[color:var(--color-principal)] text-white py-2 rounded-md hover:opacity-90 text-sm">
+                Ingresar
+            </button>
+        </form>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="mt-6 text-center text-xs text-gray-500">
+        <div class="flex justify-center items-center gap-2 mt-2">
+            <p class="mb-0">Potenciado por</p>
+            <img src="{% static 'img/logo_forgeapp.png' %}" alt="Logo ForgeApp" class="h-6">
+        </div>
+    </footer>
+</div>
+{% endblock %}

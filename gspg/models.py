@@ -139,22 +139,25 @@ class GrupoTrabajo(models.Model):
 
 # === REUNIÓN DE GRUPO ===
 class ReunionGrupo(models.Model):
-    grupo = models.ForeignKey(GrupoTrabajo, on_delete=models.CASCADE, related_name='reuniones', verbose_name="Grupo de Trabajo")
-    fecha = models.DateField(verbose_name="Fecha")
-    hora = models.TimeField(verbose_name="Hora")
-    link_reunion = models.URLField(blank=True, verbose_name="Enlace de la reunión")
-    comentario = models.TextField(blank=True, verbose_name="Comentarios")
-    estado = models.CharField(
-        max_length=20,
-        choices=[('programada', 'Programada'), ('reprogramada', 'Reprogramada')],
-        default='programada',
-        verbose_name="Estado"
-    )
+    # ... tus campos actuales ...
+    fecha = models.DateField()
+    hora = models.TimeField()
+    link = models.URLField(blank=True, null=True)
+    comentarios = models.TextField(blank=True, null=True)
 
-    class Meta:
-        verbose_name = "Reunión de Grupo"
-        verbose_name_plural = "Reuniones de Grupo"
-        ordering = ['-fecha', '-hora']
+    archivo_adjunto = models.FileField(upload_to='reuniones/adjuntos/', blank=True, null=True)
 
     def __str__(self):
-        return f"{self.grupo.nombre} - {self.fecha} {self.hora}"
+        return f"Reunión del {self.fecha} a las {self.hora}"
+
+class AsistenciaReunion(models.Model):
+    reunion = models.ForeignKey(ReunionGrupo, on_delete=models.CASCADE)
+    estudiante = models.ForeignKey('Estudiante', on_delete=models.CASCADE)
+    asistio = models.BooleanField(default=False)
+    comentario = models.TextField(blank=True, null=True)
+
+    class Meta:
+        unique_together = ('reunion', 'estudiante')
+
+    def __str__(self):
+        return f"{self.estudiante} - {self.reunion} - {'Asistió' if self.asistio else 'No asistió'}"
