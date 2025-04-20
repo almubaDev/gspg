@@ -1,65 +1,186 @@
 {% extends 'gspg_client/base.html' %}
 {% load static %}
+{% load utils %}
 
-{% block title %}Detalle Reunión{% endblock %}
+{% block title %}Detalle de Reunión{% endblock %}
 
 {% block extra_css %}
 <style>
-    .section-title {
-        font-size: 1.1rem;
+    /* Estilos específicos para el detalle de reunión */
+    .reunion-header {
+        border-left: 4px solid var(--color-principal);
+    }
+    
+    .reunion-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--color-principal);
+        margin-bottom: 0.5rem;
+    }
+    
+    .info-label {
         font-weight: 600;
-        color: #1e293b;
+        color: #4b5563;
+        margin-bottom: 0.25rem;
+        font-size: 0.9rem;
+    }
+    
+    .info-value {
         margin-bottom: 0.75rem;
     }
-
-    .card {
-        background: white;
-        border-radius: 0.75rem;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        padding: 1.25rem;
+    
+    .action-button {
+        margin-top: 0.5rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
     }
-
-    .info-label {
-        color: #475569;
-        font-size: 0.875rem;
-        font-weight: 500;
+    
+    .file-preview {
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        padding: 1rem;
+        background-color: #f9fafb;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
     }
-
-    .info-value {
-        font-size: 0.95rem;
-        color: #0f172a;
-        font-weight: 600;
-    }
-
-    .btn-outline {
-        padding: 0.4rem 1rem;
-        font-size: 0.85rem;
-        border: 1px solid var(--color-principal);
+    
+    .file-icon {
+        font-size: 1.5rem;
         color: var(--color-principal);
-        border-radius: 0.5rem;
-        font-weight: 500;
-        transition: all 0.2s ease;
-        display: inline-block;
     }
-
-    .btn-outline:hover {
-        background-color: var(--color-principal);
+    
+    .file-info {
+        flex-grow: 1;
+        font-size: 0.9rem;
+    }
+    
+    .file-name {
+        font-weight: 600;
+        color: #1f2937;
+    }
+    
+    .file-meta {
+        font-size: 0.8rem;
+        color: var(--color-muted);
+    }
+    
+    .upload-zone {
+        border: 2px dashed var(--color-border);
+        border-radius: var(--radius-md);
+        padding: 2rem 1.5rem;
+        text-align: center;
+        background-color: rgba(var(--color-principal-rgb), 0.03);
+        transition: all 0.2s;
+    }
+    
+    .upload-zone:hover {
+        border-color: var(--color-secundario);
+        background-color: rgba(var(--color-secundario-rgb), 0.05);
+    }
+    
+    .upload-icon {
+        font-size: 2.5rem;
+        color: var(--color-muted);
+        margin-bottom: 1rem;
+    }
+    
+    .upload-text {
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+        color: #4b5563;
+    }
+    
+    .input-file {
+        display: none;
+    }
+    
+    .comentario-box {
+        background-color: #f9fafb;
+        border-radius: var(--radius-md);
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .comentario-autor {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: var(--color-principal);
+        margin-bottom: 0.25rem;
+    }
+    
+    .comentario-fecha {
+        font-size: 0.8rem;
+        color: var(--color-muted);
+        margin-bottom: 0.5rem;
+    }
+    
+    .comentario-texto {
+        font-size: 0.9rem;
+    }
+    
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.5rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    
+    .badge-success {
+        background-color: #10b981;
         color: white;
     }
-
-    .btn-solid {
-        padding: 0.4rem 1rem;
-        font-size: 0.85rem;
-        background-color: var(--color-principal);
+    
+    .badge-danger {
+        background-color: #ef4444;
         color: white;
-        border-radius: 0.5rem;
-        font-weight: 500;
-        transition: background 0.2s ease;
-        display: inline-block;
     }
-
-    .btn-solid:hover {
-        filter: brightness(1.05);
+    
+    .asistencia-form {
+        max-width: 450px;
+        margin: 0 auto;
+    }
+    
+    .radio-group {
+        display: flex;
+        margin-top: 0.5rem;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+    }
+    
+    .radio-option {
+        flex: 1;
+        text-align: center;
+    }
+    
+    .radio-option input[type="radio"] {
+        display: none;
+    }
+    
+    .radio-option label {
+        display: block;
+        padding: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-weight: 500;
+    }
+    
+    .radio-option:first-child label {
+        border-right: 1px solid var(--color-border);
+    }
+    
+    .radio-option input[type="radio"]:checked + label.option-presente {
+        background-color: #10b981;
+        color: white;
+    }
+    
+    .radio-option input[type="radio"]:checked + label.option-ausente {
+        background-color: #ef4444;
+        color: white;
     }
 </style>
 {% endblock %}
@@ -67,83 +188,190 @@
 {% block content %}
 <div class="space-y-6">
 
-    <!-- 🏷 Información general -->
-    <div class="card border-l-4" style="border-color: var(--color-principal);">
-        <h2 class="text-base font-semibold text-[color:var(--color-principal)] mb-2">
-            Reunión del {{ reunion.fecha|date:"d/m/Y" }} – {{ reunion.hora|time:"H:i" }}
-        </h2>
-        <p class="text-sm text-gray-700 mb-1"><strong>Grupo:</strong> {{ grupo.nombre }}</p>
-        <p class="text-sm text-gray-700 mb-1"><strong>Intake:</strong> {{ intake.get_short_name }}</p>
-        <p class="text-sm text-gray-700 mb-1"><strong>Magíster:</strong> {{ magister.name }}</p>
-        <p class="text-sm text-gray-700"><strong>Universidad:</strong> {{ magister.university }}</p>
-    </div>
+  <!-- Tarjeta resumen -->
+  <div class="bg-white shadow rounded-xl p-4 border-l-4" style="border-color: var(--color-principal);">
+    <p class="text-sm text-gray-600 mb-1">
+      <strong>Fecha:</strong> {{ reunion.fecha|date:"d/m/Y" }}
+    </p>
+    <p class="text-sm text-gray-600 mb-1">
+      <strong>Hora:</strong> {{ reunion.hora|time:"H:i" }}
+    </p>
+    <p class="text-sm text-gray-600">
+      <strong>Grupo:</strong> {{ reunion.grupo.nombre }}
+    </p>
+  </div>
 
-    <!-- 🔗 Link de reunión -->
-    {% if reunion.link %}
-    <div class="card">
-        <div class="section-title">Link de reunión</div>
-        <a href="{{ reunion.link }}" target="_blank" class="text-blue-600 underline break-all text-sm">
-            {{ reunion.link }}
+  <!-- Botón reprogramar (solo profesor) -->
+  {% if request.session.rol == "profesor" %}
+  <div>
+    <a href="{% url 'gspg_client:editar_reunion' reunion.id %}"
+       class="inline-block px-4 py-2 rounded-md text-white font-semibold"
+       style="background-color: var(--color-secundario);">
+      <i class="fas fa-calendar-edit mr-1"></i> Reprogramar reunión
+    </a>
+  </div>
+  {% endif %}
+
+  <!-- Link a la reunión -->
+  <div class="bg-white shadow rounded-xl p-4">
+    <h2 class="font-semibold text-gray-700 mb-2">
+      <i class="fas fa-video mr-2"></i> Link a la reunión
+    </h2>
+    <form method="POST" action="{% url 'gspg_client:actualizar_link_reunion' reunion.id %}">
+      {% csrf_token %}
+      <input type="url" name="link" value="{{ reunion.link }}" placeholder="https://..." required
+             class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm text-gray-800">
+      <button type="submit"
+              class="mt-2 px-4 py-2 rounded-md text-white font-semibold"
+              style="background-color: var(--color-secundario);">
+        Guardar
+      </button>
+    </form>
+  </div>
+
+  <!-- Subida de acta -->
+  <div class="bg-white shadow rounded-xl p-4">
+    <h2 class="font-semibold text-gray-700 mb-2">
+      <i class="fa-solid fa-book"></i> Gestion de actas
+    </h2>
+    <form method="POST" enctype="multipart/form-data" action="{% url 'gspg_client:subir_acta' reunion.id %}">
+      {% csrf_token %}
+      {{ acta_form.as_p }}
+      <button type="submit"
+              class="mt-2 px-4 py-2 rounded-md text-white font-semibold"
+              style="background-color: var(--color-secundario);">
+        Gestionar
+      </button>
+    </form>
+  </div>
+
+  <!-- Registro de asistencia (redirección) -->
+  <div class="bg-white shadow rounded-xl p-4">
+    <h2 class="font-semibold text-gray-700 mb-2">
+      <i class="fas fa-list-check"></i> Registro de asistencia
+    </h2>
+
+    <a href="{% url 'gspg_client:registrar_asistencia' reunion.id %}" 
+       class="inline-flex items-center gap-2 px-4 py-2 rounded text-white font-semibold"
+       style="background-color: var(--color-secundario);">
+      Registrar
+    </a>
+  </div>
+
+  
+    <!-- Volver -->
+    <div class="mt-6">
+        <a href="{% url 'gspg_client:dashboard_profesor' %}" class="text-sm text-[var(--color-secundario)] underline">
+          ← Volver al inicio
         </a>
-    </div>
-    {% endif %}
-
-    <!-- 💬 Comentario del profesor -->
-    <div class="card">
-        <div class="section-title">Comentario del profesor</div>
-        {% if reunion.comentarios %}
-            <p class="text-sm text-gray-700 whitespace-pre-line">{{ reunion.comentarios }}</p>
-        {% else %}
-            <p class="text-gray-400 italic text-sm">Sin comentarios registrados.</p>
-        {% endif %}
-    </div>
-
-    <!-- 📎 Acta -->
-    <div class="card">
-        <div class="section-title">Acta de la reunión</div>
-
-        {% if reunion.archivo_adjunto %}
-            <a href="{{ reunion.archivo_adjunto.url }}" download
-               class="btn-outline text-sm">
-                Descargar acta
-            </a>
-        {% else %}
-            <p class="text-gray-400 italic text-sm mb-2">Aún no se ha subido el acta.</p>
-        {% endif %}
-
-        {% if usuario_tipo == "profesor" %}
-        <form action="#" method="post" enctype="multipart/form-data" class="mt-4 space-y-3">
-            {% csrf_token %}
-            <label for="archivo_adjunto" class="block text-sm font-medium text-gray-700">
-                Subir nueva acta
-            </label>
-            <input type="file" name="archivo_adjunto" id="archivo_adjunto"
-                   class="block w-full text-sm border rounded-md p-2 bg-gray-50">
-            <button type="submit" class="btn-solid">
-                Subir archivo
-            </button>
-        </form>
-        {% endif %}
-    </div>
-
-    <!-- 🗒 Comentarios adicionales -->
-    <div class="card">
-        <div class="section-title">Comentarios adicionales</div>
-        <p class="text-gray-400 text-sm italic">Se habilitarán los comentarios para estudiantes próximamente.</p>
-    </div>
-
-    <!-- 🔙 Botón volver -->
-    <div class="flex justify-center">
-        {% if usuario_tipo == 'profesor' %}
-            <a href="{% url 'gspg_client:dashboard_profesor' %}" class="btn-outline">
-                ← Volver al panel
-            </a>
-        {% else %}
-            <a href="{% url 'gspg_client:dashboard_estudiante' %}" class="btn-outline">
-                ← Volver al panel
-            </a>
-        {% endif %}
-    </div>
-
+      </div>
 </div>
+
+    <!-- Botón flotante de Comentarios -->
+    <a href="{% url 'gspg_client:comentarios_reunion' reunion.id %}"
+       title="Comentarios"
+       class="boton-comentarios w-14 h-14 rounded-full flex items-center justify-center text-white shadow-lg"
+       style="
+         background-color: {{ request.session.color_secundario|default:'#3b82f6' }};
+         box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+       ">
+      <i class="fas fa-comment-dots text-xl"></i>
+    </a>
+
 {% endblock %}
+
+
+{% block extra_js %}
+<script>
+    // Asegurar que el botón flotante no sea tapado por scroll u otros elementos
+    document.addEventListener('DOMContentLoaded', function () {
+      const botonFlotante = document.querySelector('.boton-comentarios');
+      if (botonFlotante) {
+        botonFlotante.style.position = 'fixed';
+        botonFlotante.style.bottom = '2rem';
+        botonFlotante.style.right = '2rem';
+        botonFlotante.style.zIndex = '9999';
+      }
+    });
+</script>
+<script>
+    // Script para manejar el modal de asistencia
+    document.addEventListener('DOMContentLoaded', function() {
+        {% if usuario_tipo == "profesor" %}
+        const modal = document.getElementById('asistenciaModal');
+        const btnsRegistrar = document.querySelectorAll('.registrar-asistencia');
+        const btnCerrar = document.getElementById('closeModal');
+        const btnCancelar = document.getElementById('cancelarAsistencia');
+        const inputEstudianteId = document.getElementById('estudiante_id');
+        const nombreEstudiante = document.getElementById('nombreEstudiante');
+        const correoEstudiante = document.getElementById('correoEstudiante');
+        
+        // Datos de estudiantes
+        const estudiantes = {
+            {% for estudiante in grupo.estudiantes.all %}
+            "{{ estudiante.id }}": {
+                "nombre": "{{ estudiante.persona.nombre_completo }}",
+                "correo": "{{ estudiante.persona.correo_institucional }}"
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        };
+        
+        // Datos de asistencias existentes
+        const asistencias = {
+            {% for asistencia in asistencias.values %}
+            "{{ asistencia.estudiante_id }}": {
+                "asistio": {% if asistencia.asistio %}true{% else %}false{% endif %},
+                "comentario": "{{ asistencia.comentario|default:'' }}"
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        };
+        
+        // Abrir modal
+        btnsRegistrar.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const estudianteId = this.dataset.estudiante;
+                
+                // Actualizar datos en el modal
+                inputEstudianteId.value = estudianteId;
+                nombreEstudiante.textContent = estudiantes[estudianteId].nombre;
+                correoEstudiante.textContent = estudiantes[estudianteId].correo;
+                
+                // Cargar datos de asistencia si existe
+                if (asistencias[estudianteId]) {
+                    if (asistencias[estudianteId].asistio) {
+                        document.getElementById('asistio_si').checked = true;
+                    } else {
+                        document.getElementById('asistio_no').checked = true;
+                    }
+                    document.getElementById('comentario').value = asistencias[estudianteId].comentario;
+                } else {
+                    // Limpiar formulario
+                    document.getElementById('asistio_si').checked = false;
+                    document.getElementById('asistio_no').checked = false;
+                    document.getElementById('comentario').value = '';
+                }
+                
+                // Mostrar modal
+                modal.classList.remove('hidden');
+            });
+        });
+        
+        // Cerrar modal
+        [btnCerrar, btnCancelar].forEach(btn => {
+            btn.addEventListener('click', function() {
+                modal.classList.add('hidden');
+            });
+        });
+        
+        // Cerrar modal al hacer clic fuera
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.classList.add('hidden');
+            }
+        });
+        {% endif %}
+    });
+</script>
+{% endblock %}
+```

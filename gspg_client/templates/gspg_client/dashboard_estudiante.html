@@ -5,120 +5,180 @@
 
 {% block extra_css %}
 <style>
-    .section-title {
-        font-size: 1.1rem;
+    /* Los estilos básicos ya están en base.html */
+    
+    /* Estilos específicos para el dashboard de estudiante */
+    .dashboard-card {
+        border-left: 4px solid var(--color-principal);
+        transition: transform 0.2s;
+    }
+    
+    .dashboard-card:hover {
+        transform: translateY(-3px);
+    }
+    
+    .reunion-item {
+        border-bottom: 1px solid var(--color-border);
+        padding: 0.75rem 0;
+    }
+    
+    .reunion-item:last-child {
+        border-bottom: none;
+    }
+    
+    .reunion-fecha {
         font-weight: 600;
-        color: #1e293b;
-        margin-bottom: 0.75rem;
-    }
-
-    .card {
-        background: white;
-        border-radius: 0.75rem;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        padding: 1.25rem;
-    }
-
-    .info-label {
-        color: #475569;
-        font-size: 0.875rem;
-        font-weight: 500;
-    }
-
-    .info-value {
-        font-size: 0.95rem;
-        color: #0f172a;
-        font-weight: 600;
-    }
-
-    .btn-outline {
-        padding: 0.4rem 1rem;
-        font-size: 0.85rem;
-        border: 1px solid var(--color-principal);
         color: var(--color-principal);
-        border-radius: 0.5rem;
-        font-weight: 500;
-        transition: all 0.2s ease;
-        display: inline-block;
+        font-size: 0.95rem;
     }
-
-    .btn-outline:hover {
-        background-color: var(--color-principal);
-        color: white;
-    }
-
-    .btn-solid {
-        padding: 0.4rem 1rem;
+    
+    .reunion-grupo {
         font-size: 0.85rem;
+        color: var(--color-muted);
+    }
+    
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.5rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    
+    .badge-primary {
         background-color: var(--color-principal);
         color: white;
-        border-radius: 0.5rem;
-        font-weight: 500;
-        transition: background 0.2s ease;
-        display: inline-block;
     }
-
-    .btn-solid:hover {
-        filter: brightness(1.05);
+    
+    .badge-secondary {
+        background-color: var(--color-secundario);
+        color: white;
+    }
+    
+    .grupo-card {
+        padding: 0.75rem;
+        border-radius: var(--radius-md);
+        margin-bottom: 0.5rem;
+        border: 1px solid var(--color-border);
+        transition: all 0.2s;
+    }
+    
+    .grupo-card:hover {
+        border-color: var(--color-principal);
+        background-color: rgba(var(--color-principal-rgb), 0.05);
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="space-y-6">
+<div class="container mx-auto px-4 space-y-6">
 
-    <!-- 🏫 Información institucional -->
-    <div class="card border-l-4" style="border-color: var(--color-principal);">
+    <!-- Información institucional y bienvenida -->
+    <div class="card dashboard-card">
         {% if magister %}
-        <p class="text-gray-800 text-sm leading-relaxed">
-            Bienvenido/a <strong>{{ estudiante.persona.nombre_completo }}</strong> al
-            <strong>Sistema de Gestión y Seguimiento para Procesos de Grado</strong> de <strong>{{ magister.university }}</strong>.
-        </p>
-        <p class="text-gray-700 text-sm mt-2">
-            Programa: <strong>{{ magister.name }}</strong><br>
-            Facultad: <strong>{{ magister.faculty }}</strong>
-        </p>
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+                <h1 class="text-lg font-bold text-principal">
+                    Bienvenido/a {{ estudiante.persona.nombre_completo }}
+                </h1>
+                <p class="text-sm text-gray-600">
+                    {{ magister.name }} | {{ magister.faculty }}
+                </p>
+            </div>
+            
+            {% if request.session.logo_url %}
+            <img src="{{ request.session.logo_url }}" alt="Logo" class="h-10 hidden sm:block">
+            {% endif %}
+        </div>
         {% endif %}
     </div>
 
-    <!-- 📅 Reuniones próximas -->
+    <!-- Próximas reuniones -->
     <div class="card">
-        <div class="section-title">Próximas reuniones</div>
-        {% if reuniones_proximas %}
-        <ul class="divide-y divide-gray-200 text-sm">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="section-title">
+                <i class="fas fa-calendar-alt mr-2 text-principal"></i>Próximas reuniones
+            </h2>
+            
+            {% if reuniones_proximas %}
+            <span class="badge badge-primary">{{ reuniones_proximas|length }}</span>
+            {% endif %}
+        </div>
+        
+        <div class="divide-y divide-gray-100">
+            {% if reuniones_proximas %}
             {% for reunion in reuniones_proximas %}
-            <li class="py-2 flex justify-between items-center">
-                <div>
-                    <div class="info-label">Fecha</div>
-                    <div class="info-value">{{ reunion.fecha|date:"d/m/Y" }}</div>
-                    <div class="text-xs text-gray-500">Grupo: {{ reunion.grupo.nombre }}</div>
+            <div class="reunion-item py-3">
+                <div class="flex flex-col sm:flex-row justify-between gap-2">
+                    <div>
+                        <div class="reunion-fecha">
+                            {{ reunion.fecha|date:"d/m/Y" }} - {{ reunion.hora|time:"H:i" }}
+                        </div>
+                        <div class="reunion-grupo">
+                            Grupo: {{ reunion.grupo.nombre }}
+                        </div>
+                    </div>
+                    <div class="mt-2 sm:mt-0">
+                        <a href="{% url 'gspg_client:reunion_detalle' reunion.id %}" 
+                           class="btn-outline text-sm">
+                            Ver detalles
+                        </a>
+                    </div>
                 </div>
-                <a href="{% url 'gspg_client:reunion_detalle' reunion.id %}" class="btn-outline">Ver detalles</a>
-            </li>
+            </div>
             {% endfor %}
-        </ul>
-        {% else %}
-        <p class="text-gray-500 text-sm text-center">No hay reuniones programadas.</p>
-        {% endif %}
+            {% else %}
+            <div class="text-center py-6 text-gray-500">
+                <i class="far fa-calendar-times text-2xl mb-2 opacity-50"></i>
+                <p>No hay reuniones programadas próximamente.</p>
+            </div>
+            {% endif %}
+        </div>
     </div>
 
-    <!-- 👥 Grupos asignados -->
+    <!-- Mis grupos -->
     <div class="card">
-        <div class="section-title">Mis grupos</div>
+        <h2 class="section-title">
+            <i class="fas fa-users mr-2 text-principal"></i>Mis grupos
+        </h2>
+        
         {% if grupos %}
-        <ul class="divide-y divide-gray-200 text-sm">
+        <div class="mt-3 space-y-2">
             {% for grupo in grupos %}
-            <li class="py-2 flex justify-between items-center">
-                <div>
-                    <div class="info-value">{{ grupo.nombre }}</div>
-                    <div class="text-xs text-gray-500">{{ grupo.intake.get_short_name }}</div>
+            <div class="grupo-card">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <div class="font-semibold">{{ grupo.nombre }}</div>
+                        <div class="text-xs text-gray-500">{{ grupo.intake.get_short_name }}</div>
+                    </div>
+                    
+                    <div>
+                        {% if grupo.finalizado %}
+                        <span class="badge badge-secondary">Finalizado</span>
+                        {% else %}
+                        <span class="badge badge-primary">Activo</span>
+                        {% endif %}
+                    </div>
                 </div>
-            </li>
+            </div>
             {% endfor %}
-        </ul>
+        </div>
         {% else %}
-        <p class="text-gray-500 text-sm text-center">No estás asignado a ningún grupo actualmente.</p>
+        <div class="text-center py-6 text-gray-500">
+            <i class="fas fa-users-slash text-2xl mb-2 opacity-50"></i>
+            <p>No estás asignado a ningún grupo actualmente.</p>
+        </div>
         {% endif %}
+    </div>
+    
+    <!-- Botón de cerrar sesión -->
+    <div class="flex justify-center mt-8">
+        <a href="{% url 'gspg_client:logout' %}" 
+           class="btn-outline flex items-center gap-2">
+            <i class="fas fa-sign-out-alt"></i>
+            Cerrar sesión
+        </a>
     </div>
 
 </div>

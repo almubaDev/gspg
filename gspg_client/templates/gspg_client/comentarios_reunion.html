@@ -1,0 +1,70 @@
+{% extends 'gspg_client/base.html' %}
+{% load static %}
+
+{% block title %}Comentarios de la reunión{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto p-4 space-y-4">
+
+  <!-- Cabecera -->
+  <div class="bg-white shadow rounded-xl p-4 border-l-4" style="border-color: var(--color-principal);">
+    <h1 class="text-lg font-semibold text-gray-800">Comentarios</h1>
+    <p class="text-sm text-gray-600">Reunión del {{ reunion.fecha|date:"d/m/Y" }} - {{ reunion.grupo.nombre }}</p>
+  </div>
+
+  <!-- Caja de comentarios -->
+  <div id="chat-container" class="h-96 overflow-y-auto bg-gray-100 p-4 rounded-xl space-y-4 shadow-inner">
+    {% for comentario in comentarios %}
+      {% if comentario.autor == persona %}
+        <div class="text-right">
+          <div class="inline-block px-4 py-2 rounded-2xl text-white text-sm"
+               style="background-color: var(--color-principal); max-width: 75%;">
+            {{ comentario.contenido }}
+            <div class="text-xs text-white opacity-70 mt-1">{{ comentario.creado_en|time:"H:i" }}</div>
+          </div>
+        </div>
+      {% else %}
+        <div class="text-left">
+          <div class="inline-block px-4 py-2 rounded-2xl bg-white text-sm text-gray-900 shadow"
+               style="max-width: 75%;">
+            <span class="block font-semibold text-xs mb-1">{{ comentario.autor.nombre_completo }}</span>
+            {{ comentario.contenido }}
+            <div class="text-xs text-gray-400 mt-1">{{ comentario.creado_en|time:"H:i" }}</div>
+          </div>
+        </div>
+      {% endif %}
+    {% empty %}
+      <p class="text-center text-gray-500">Aún no hay comentarios.</p>
+    {% endfor %}
+  </div>
+
+  <!-- Formulario -->
+  <form method="post" class="flex items-center gap-2 pt-4">
+    {% csrf_token %}
+    <input type="text" name="comentario" placeholder="Escribe un mensaje..." required
+           class="flex-1 rounded-full border px-4 py-2 text-sm focus:outline-none"
+           style="border-color: var(--color-secundario);">
+    <button type="submit"
+            class="px-4 py-2 rounded-full text-white font-semibold text-sm"
+            style="background-color: var(--color-secundario);">
+      Enviar
+    </button>
+  </form>
+
+  <!-- Volver -->
+  <div class="pt-6">
+    <a href="{% url 'gspg_client:reunion_detalle' reunion.id %}" style="color: var(--color-secundario);" class="text-sm underline">
+      ← Volver al detalle de la reunión
+    </a>
+  </div>
+
+</div>
+
+<!-- Scroll automático -->
+<script>
+  const chatContainer = document.getElementById('chat-container');
+  if (chatContainer) {
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+  }
+</script>
+{% endblock %}

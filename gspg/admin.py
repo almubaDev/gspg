@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Estudiante, Intake, Profesor, GrupoTrabajo, Persona, ReunionGrupo, Magister
+from .models import Estudiante, Intake, Profesor, GrupoTrabajo, Persona, ReunionGrupo, Magister, AsistenciaReunion
 
 
 
@@ -63,3 +63,10 @@ class PersonaAdmin(admin.ModelAdmin):
 
 class ReunionGrupoAdmin(admin.ModelAdmin):
     list_display = ('fecha', 'hora', 'link', 'comentarios')
+    
+
+@admin.register(AsistenciaReunion)
+class AsistenciaReunionAdmin(admin.ModelAdmin):
+    list_display = ['reunion', 'estudiante', 'asistio']
+    list_filter = ['asistio', 'reunion']
+    search_fields = ['reunion__grupo__nombre', 'estudiante__persona__nombre_completo']

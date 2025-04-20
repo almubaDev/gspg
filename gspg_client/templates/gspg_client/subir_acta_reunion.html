@@ -1,27 +1,62 @@
-{% extends 'base.html' %}
+{% extends 'gspg_client/base.html' %}
 {% load static %}
 
-{% block title %}Subir Acta{% endblock %}
+{% block title %}Gestionar Actas{% endblock %}
 
 {% block content %}
-<div class="container py-4 max-w-xl mx-auto">
+<div class="max-w-2xl mx-auto space-y-6 py-6">
 
-    <h1 class="h5 mb-4">Subir acta para reunión del {{ reunion.fecha|date:"d/m/Y" }}</h1>
+  <!-- Formulario subir nueva acta -->
+  <div class="bg-white shadow rounded-xl p-4 border-l-4" style="border-color: var(--color-principal);">
+    <h1 class="text-lg font-semibold text-gray-800 mb-4">
+      Subir acta para la reunión del {{ reunion.fecha|date:"d/m/Y" }}
+    </h1>
 
-    <form method="post" enctype="multipart/form-data" class="bg-white p-4 rounded shadow">
-        {% csrf_token %}
-        {{ form.non_field_errors }}
+    <form method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+      <div class="mb-4">
+        {{ form.archivo.label_tag }}
+        {{ form.archivo }}
+        {% if form.archivo.errors %}
+          <p class="text-red-600 text-sm mt-1">{{ form.archivo.errors.0 }}</p>
+        {% endif %}
+      </div>
 
-        <div class="mb-3">
-            {{ form.archivo.label_tag }}
-            {{ form.archivo }}
-            {% if form.archivo.errors %}
-                <div class="text-danger text-sm">{{ form.archivo.errors.0 }}</div>
-            {% endif %}
-        </div>
-
-        <button type="submit" class="btn btn-primary">Subir acta</button>
+      <button type="submit" class="px-4 py-2 rounded text-white font-medium" style="background-color: var(--color-secundario);">
+        Subir Acta
+      </button>
     </form>
+  </div>
+
+  <!-- Lista de actas subidas -->
+  <div class="bg-white shadow rounded-xl p-4">
+    <h2 class="text-md font-semibold text-gray-700 mb-3">Historial de actas</h2>
+
+    {% if actas %}
+    <ul class="divide-y text-sm">
+      {% for acta in actas %}
+      <li class="py-2 flex justify-between items-center">
+        <span>
+          {{ acta.fecha_subida|date:"d/m/Y H:i" }}
+        </span>
+        <a href="{{ acta.archivo.url }}" download class="text-gray-700 hover:text-blue-600 text-lg">
+          <i class="fas fa-download" style="color: var(--color-secundario);"></i>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-gray-500 italic">No hay actas registradas aún.</p>
+    {% endif %}
+  </div>
+
+    <!-- Volver -->
+    <div class="mt-6">
+      <a href="{% url 'gspg_client:reunion_detalle' reunion.id %}" class="text-sm text-[var(--color-secundario)] underline">
+        ← Volver al detalle de la reunión
+      </a>
+    </div>
 
 </div>
 {% endblock %}

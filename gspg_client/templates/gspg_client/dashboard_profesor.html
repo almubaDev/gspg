@@ -1,76 +1,100 @@
 {% extends 'gspg_client/base.html' %}
 {% load static %}
 
-{% block title %}Dashboard Profesor{% endblock %}
+{% block title %}Panel del Profesor{% endblock %}
 
 {% block extra_css %}
 <style>
-    .card {
-        background: white;
-        border-radius: 0.75rem;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        padding: 1.25rem;
+    .tarjeta-bienvenida {
+        background-color: #f9fafb;
+        color: #1f2937;
+        padding: 1.75rem 1.5rem;
+        border-radius: 1rem;
+        text-align: center;
     }
 
-    .grupo-btn {
-        display: block;
-        background-color: #16325b;
-        color: white;
-        padding: 0.85rem 1rem;
-        border-radius: 0.5rem;
-        font-weight: 500;
+    .sigla-gspg {
+        font-size: 1.5rem;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        color: var(--color-principal) !important;
+        margin-bottom: 0.5rem;
+    }
+
+    .texto-bienvenida {
         font-size: 0.875rem;
-        text-align: center;
-        transition: background 0.2s ease;
+        color: #374151;
     }
 
-    .grupo-btn:hover {
-        background-color: #1e3a72;
+    .bloque {
+        background-color: white;
+        padding: 1.5rem;
+        border-radius: 1rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     }
 
-    .logout-link {
-        color: #16325b;
-        font-weight: 500;
-        text-decoration: underline;
-        text-align: center;
+    .boton-grupo {
         display: block;
-        margin-top: 1rem;
+        width: 100%;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        background-color: var(--color-principal) !important;
+        color: white;
+        font-weight: 600;
+        text-align: center;
+        border-radius: 0.75rem;
+        transition: opacity 0.2s ease;
     }
+
+    .boton-grupo:hover {
+        opacity: 0.9;
+    }
+
+    .cerrar-sesion {
+        display: block;
+        text-align: center;
+        margin-top: 2rem;
+        font-size: 0.875rem;
+        color: var(--color-secundario) !important;
+        font-weight: 500;
+    }
+
+    .cerrar-sesion:hover {
+        text-decoration: underline;
+    }
+
+    .text_impresion {
+        color: var(--color-principal);
+    } 
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="space-y-6">
-
-    <div class="card flex items-center gap-4 border-l-4" style="border-color: #16325b;">
-        {% if magister.logo_url_universidad %}
-            <img src="{{ magister.logo_url_universidad }}" alt="Logo Universidad" class="h-12 w-auto">
+    <!-- Tarjeta de Bienvenida -->
+    <div class="tarjeta-bienvenida">
+        <div class="sigla-gspg">GSPG -  {{ magister.university }}</div>
+        {% if magister %}
+        <p class="texto-bienvenida">
+            Bienvenido/a {{ profesor.nombre }}
+        </p>
+        <p class='mt-2 text_impresion'><strong>{{ magister.name }}</strong></p>
         {% endif %}
-        <div>
-            <h2 class="text-lg font-semibold tracking-tight">GSPG</h2>
-            <p class="text-sm text-gray-800 leading-relaxed">
-                {{ magister.name }}<br>
-                Bienvenido/a <strong>{{ profesor.nombre }}</strong><br>
-                Rol: <strong>Profesor</strong>
-            </p>
-        </div>
     </div>
 
-    <div class="card">
-        <h3 class="text-base font-semibold text-gray-800 mb-4">Gestión de Grupos</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {% for grupo in grupos %}
-            <a href="{% url 'gspg_client:gestion_grupo' grupo.id %}" class="grupo-btn">
-                {{ grupo.nombre }}<br>
-                <span class="text-xs text-white/80">{{ grupo.intake.get_short_name }}</span>
-            </a>
-            {% endfor %}
-        </div>
-    </div>
+    <!-- Gestión de Grupos -->
+    <div class="bloque">
+        <h2 class="text-lg font-semibold mb-4 text-gray-700"><i class="fa-solid fa-users-viewfinder"></i> Gestión de Grupos</h2>
+        {% for grupo in grupos %}
+            <a href="{% url 'gspg_client:gestion_grupo' grupo.id %}" class='boton-grupo'>{{ grupo.nombre }}</a>
+     
+        {% empty %}
+        <p class="text-sm text-gray-500">No tienes grupos asignados aún.</p>
+        {% endfor %}
 
-    <a href="{% url 'gspg_client:logout' %}" class="logout-link">
-        Cerrar sesión
-    </a>
+        <!-- Cerrar sesión -->
+        <a href="{% url 'gspg_client:logout' %}" class="cerrar-sesion">Cerrar sesión</a>
+    </div>
 
 </div>
 {% endblock %}

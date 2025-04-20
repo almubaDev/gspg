@@ -1,0 +1,61 @@
+{% extends 'gspg_client/base.html' %}
+{% load static %}
+{% load utils %}
+
+{% block title %}Registrar Asistencia{% endblock %}
+
+{% block content %}
+<div class="p-4 max-w-3xl mx-auto">
+
+  <!-- Cabecera -->
+  <div class="bg-white shadow rounded-xl p-4 border-l-4 mb-6" style="border-color: var(--color-principal);">
+    <h1 class="text-lg font-semibold text-gray-800 mb-2">Registrar asistencia</h1>
+    <p class="text-sm text-gray-600">
+      Reunión del <strong>{{ reunion.fecha|date:"d/m/Y" }}</strong> a las <strong>{{ reunion.hora|time:"H:i" }}</strong><br>
+      Grupo: <strong>{{ reunion.grupo.nombre }}</strong>
+    </p>
+  </div>
+
+  <!-- Formulario de asistencia -->
+  <form method="post" class="bg-white shadow rounded-xl p-4 space-y-4">
+    {% csrf_token %}
+
+    {% for estudiante in estudiantes %}
+    <div class="border rounded overflow-hidden">
+      <div style="background-color: var(--color-principal);" class="text-white px-3 py-2 text-sm font-medium">
+        {{ estudiante.persona.nombre_completo }}
+      </div>
+      <div class="flex gap-6 px-4 py-3" style="background-color: #f9fafb;">
+        <label class="inline-flex items-center gap-2 text-sm text-gray-800">
+          <input type="radio" name="asistencia_{{ estudiante.id }}" value="True"
+            {% if asistencias|get_item:estudiante.id %}checked{% endif %}>
+          Presente
+        </label>
+        <label class="inline-flex items-center gap-2 text-sm text-gray-800">
+          <input type="radio" name="asistencia_{{ estudiante.id }}" value="False"
+            {% if asistencias|get_item:estudiante.id == False %}checked{% endif %}>
+          Ausente
+        </label>
+      </div>
+    </div>
+    {% empty %}
+    <p class="text-gray-500 italic">No hay estudiantes registrados para este grupo.</p>
+    {% endfor %}
+
+    <div class="text-end pt-6">
+      <button type="submit" class="px-4 py-2 rounded text-white font-medium"
+        style="background-color: var(--color-secundario);">
+        Guardar asistencia
+      </button>
+    </div>
+  </form>
+
+  <!-- Volver -->
+  <div class="mt-6">
+    <a href="{% url 'gspg_client:reunion_detalle' reunion.id %}" style="color: var(--color-secundario);" class="text-sm underline">
+      ← Volver al detalle de la reunión
+    </a>
+  </div>
+
+</div>
+{% endblock %}

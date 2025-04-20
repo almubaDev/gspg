@@ -2,8 +2,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.utils.timezone import now
 from django.contrib import messages
-from gspg.models import Estudiante, Profesor, ReunionGrupo, GrupoTrabajo, ActaReunion
+from gspg.models import Estudiante, Profesor, ReunionGrupo, GrupoTrabajo, ActaReunion, AsistenciaReunion
 from .forms import ActaReunionForm
+from django.utils import timezone
 
 
 
@@ -36,11 +37,43 @@ def login_view(request):
         if estudiante:
             request.session["tipo"] = "estudiante"
             request.session["id"] = estudiante.id
+            
+            # Inicializar configuración de universidad
+            if estudiante.intake and estudiante.intake.magister and estudiante.intake.magister.university:
+                from gspg_client.models import Universidad
+                from gspg.context_processors import normalizar_nombre
+                
+                magister = estudiante.intake.magister
+                nombre_normalizado = normalizar_nombre(magister.university)
+                universidad = Universidad.objects.filter(nombre_normalizado=nombre_normalizado).first()
+                
+                if universidad:
+                    request.session['color_primario'] = universidad.color_primario
+                    request.session['color_secundario'] = universidad.color_secundario
+                    request.session['logo_url'] = universidad.logo.url if universidad.logo else None
+            
             return redirect("gspg_client:dashboard_estudiante")
 
         elif profesor:
             request.session["tipo"] = "profesor"
             request.session["id"] = profesor.id
+            
+            # Inicializar configuración de universidad
+            # Intentamos obtener el magister del primer grupo del profesor
+            grupo = profesor.grupos_trabajo.select_related('magister').first()
+            if grupo and grupo.magister and grupo.magister.university:
+                from gspg_client.models import Universidad
+                from gspg.context_processors import normalizar_nombre
+                
+                magister = grupo.magister
+                nombre_normalizado = normalizar_nombre(magister.university)
+                universidad = Universidad.objects.filter(nombre_normalizado=nombre_normalizado).first()
+                
+                if universidad:
+                    request.session['color_primario'] = universidad.color_primario
+                    request.session['color_secundario'] = universidad.color_secundario
+                    request.session['logo_url'] = universidad.logo.url if universidad.logo else None
+            
             return redirect("gspg_client:dashboard_profesor")
 
         else:
@@ -163,23 +196,97 @@ def reunion_detalle(request, reunion_id):
     return render(request, 'gspg_client/reunion_detalle.html', context)
 
 
-def subir_acta(request, reunion_id):
+
+def actualizar_link_reunion(request, reunion_id):
     reunion = get_object_or_404(ReunionGrupo, id=reunion_id)
 
     if request.method == "POST":
+        link = request.POST.get("link", "").strip()
+        reunion.link = link
+        reunion.save()
+    return redirect("gspg_client:reunion_detalle", reunion_id=reunion.id)
+
+
+def subir_acta(request, reunion_id):
+    reunion = get_object_or_404(ReunionGrupo, id=reunion_id)
+
+    # Subida de nueva acta
+    if request.method == 'POST':
         form = ActaReunionForm(request.POST, request.FILES)
         if form.is_valid():
             acta = form.save(commit=False)
             acta.reunion = reunion
-            acta.subido_por = request.user.profesor if hasattr(request.user, "profesor") else None
             acta.save()
             messages.success(request, "Acta subida correctamente.")
-            return redirect("gspg_client:gestion_grupo", grupo_id=reunion.grupo.id)
+            return redirect('gspg_client:subir_acta', reunion_id=reunion.id)
+        else:
+            messages.error(request, "Error al subir el acta.")
     else:
         form = ActaReunionForm()
 
-    return render(request, "gspg_client/subir_acta_reunion.html", {
-        "reunion": reunion,
-        "form": form,
-    })
+    actas = ActaReunion.objects.filter(reunion=reunion).order_by('-fecha_subida')
 
+    return render(request, 'gspg_client/subir_acta_reunion.html', {
+        'form': form,
+        'reunion': reunion,
+        'actas': actas
+    })
+    
+    
+def registrar_asistencia(request, reunion_id):
+    reunion = get_object_or_404(ReunionGrupo, id=reunion_id)
+    estudiantes = reunion.grupo.estudiantes.all()
+
+    if request.method == 'POST':
+        for estudiante in estudiantes:
+            valor = request.POST.get(f"asistencia_{estudiante.id}")
+            asistio = True if valor == "True" else False
+
+            # Debug en consola
+            print(f"[DEBUG] Estudiante {estudiante.id} - Valor POST: {valor} - asistio: {asistio}")
+
+            AsistenciaReunion.objects.update_or_create(
+                reunion=reunion,
+                estudiante=estudiante,
+                defaults={'asistio': asistio}
+            )
+
+        return redirect('gspg_client:reunion_detalle', reunion_id=reunion.id)
+
+    # Mostrar asistencias actuales
+    asistencias = {
+        asistencia.estudiante.id: asistencia.asistio
+        for asistencia in AsistenciaReunion.objects.filter(reunion=reunion)
+    }
+
+    context = {
+        'reunion': reunion,
+        'estudiantes': estudiantes,
+        'asistencias': asistencias,
+    }
+    return render(request, 'gspg_client/registrar_asistencia.html', context)
+
+
+
+
+def comentarios_reunion(request, reunion_id):
+    reunion = get_object_or_404(ReunionGrupo, id=reunion_id)
+    persona = get_persona_sesion(request)  # profesor o estudiante
+
+    if request.method == 'POST':
+        contenido = request.POST.get('comentario', '').strip()
+        if contenido:
+            ComentarioReunion.objects.create(
+                reunion=reunion,
+                autor=persona,
+                contenido=contenido
+            )
+        return redirect('gspg_client:comentarios_reunion', reunion_id=reunion.id)
+
+    comentarios = reunion.comentarioreunion_set.select_related('autor').order_by('creado_en')
+
+    return render(request, 'gspg_client/comentarios_reunion.html', {
+        'reunion': reunion,
+        'comentarios': comentarios,
+        'persona': persona,
+    })
