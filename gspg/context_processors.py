@@ -1,5 +1,5 @@
 import unicodedata
-from gspg_client.models import Universidad  # ← modelo que creaste en la PWA
+from gspg_client.models import Universidad
 
 def normalizar_nombre(nombre):
     if not nombre:
@@ -9,9 +9,6 @@ def normalizar_nombre(nombre):
     return sin_tildes.upper().strip()
 
 def user_magister_context(request):
-    """
-    Añade el magíster activo, la lista de magísteres y el logo de la universidad asociada.
-    """
     context = {}
 
     if request.user.is_authenticated:
@@ -19,13 +16,22 @@ def user_magister_context(request):
         context['user_magister'] = active_magister
         context['magisteres_asignados'] = getattr(request.user, 'magisteres', []).all()
 
-
         if active_magister and active_magister.university:
             nombre_normalizado = normalizar_nombre(active_magister.university)
             universidad = Universidad.objects.filter(nombre_normalizado=nombre_normalizado).first()
-            if universidad and universidad.logo:
-                context['logo_url_universidad'] = universidad.logo.url
+
+            if universidad:
+                # Guardar en sesión para gspg_client
+                request.session['color_primario'] = universidad.color_primario
+                request.session['color_secundario'] = universidad.color_secundario
+                request.session['logo_url'] = universidad.logo.url if universidad.logo else None
+
+                # También lo devolvemos en el context (por compatibilidad con gspg)
+                context['logo_url_universidad'] = universidad.logo.url if universidad.logo else None
             else:
+                request.session['color_primario'] = '#1e40af'
+                request.session['color_secundario'] = '#3b82f6'
+                request.session['logo_url'] = None
                 context['logo_url_universidad'] = None
 
     return context

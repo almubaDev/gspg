@@ -1,7 +1,9 @@
 from django import forms
 from django.db.models import Q
 from django.core.validators import FileExtensionValidator
-from .models import Intake, Magister, Estudiante, Profesor, GrupoTrabajo, ReunionGrupo, Persona, AsistenciaReunion
+from .models import (Intake, Magister, Persona ,Estudiante, Profesor, GrupoTrabajo, 
+                     ReunionGrupo, AsistenciaReunion, ActaReunion
+)
 import pandas as pd
 import openpyxl
 
@@ -61,9 +63,9 @@ class PersonaForm(forms.ModelForm):
 
 class EstudianteForm(forms.ModelForm):
     def __init__(self, *args, user=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        if user and hasattr(user, 'active_magister') and user.active_magister:
-            self.fields['intake'].queryset = Intake.objects.filter(magister=user.active_magister)
+       super().__init__(*args, **kwargs)
+       if user and hasattr(user, 'active_magister') and user.active_magister:
+           self.fields['intake'].queryset = Intake.objects.filter(magister=user.active_magister)  # Corregido
 
     class Meta:
         model = Estudiante
@@ -88,7 +90,7 @@ class EstudianteCompletoForm(forms.Form):
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
         if user and hasattr(user, 'active_magister') and user.active_magister:
-            self.fields['intake'].queryset = Intake.objects.filter(magister=user.active_magiste)
+            self.fields['intake'].queryset = Intake.objects.filter(magister=user.active_magister)
 
 
 class EstudianteBulkUploadForm(forms.Form):
@@ -247,4 +249,18 @@ class AsistenciaReunionForm(forms.ModelForm):
         fields = ['asistio', 'comentario']
         widgets = {
             'comentario': forms.Textarea(attrs={'rows': 2}),
+        }
+        
+        
+
+
+class ActaReunionForm(forms.ModelForm):
+    class Meta:
+        model = ActaReunion
+        fields = ['archivo']
+        widgets = {
+            'archivo': forms.ClearableFileInput(attrs={
+                'class': 'form-control',
+                'accept': '.pdf,.doc,.docx',
+            }),
         }

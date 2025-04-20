@@ -42,6 +42,7 @@
                                     <th>Estado</th>
                                     <th>Link</th>
                                     <th>Comentarios</th>
+                                    <th>Acta</th>
                                     {% if not grupo.finalizado %}
                                     <th>Acciones</th>
                                     {% endif %}
@@ -60,15 +61,24 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        {% if reunion.link_reunion %}
-                                        <a href="{{ reunion.link_reunion }}" target="_blank" class="btn btn-sm btn-outline-primary">
-                                            <i class="fas fa-video me-1"></i>Unirse
+                                        {% if reunion.link %}
+                                        <a href="{{ reunion.link }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-external-link-alt me-1"></i>Unirse
                                         </a>
                                         {% else %}
                                         <span class="text-muted">No disponible</span>
                                         {% endif %}
                                     </td>
-                                    <td>{{ reunion.comentario|default:"-"|truncatewords:10 }}</td>
+                                    <td>{{ reunion.comentarios|default:"-"|truncatewords:10 }}</td>
+                                    <td>
+                                        {% if reunion.archivo_adjunto %}
+                                            <a href="{{ reunion.archivo_adjunto.url }}" class="btn btn-sm btn-outline-primary" download>
+                                                <i class="fas fa-file-download me-1"></i>Acta
+                                            </a>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
                                     {% if not grupo.finalizado %}
                                     <td>
                                         <a href="{% url 'gspg:reunion_edit' reunion.pk %}" class="btn btn-sm btn-outline-secondary me-1" title="Editar">
@@ -116,8 +126,7 @@
                                     <th>Hora</th>
                                     <th>Estado</th>
                                     <th>Link</th>
-                                    <th>Archivo</th>        
-                                    <th>Asistencia</th>  
+                                    <th>Acta</th>        
                                     <th>Comentarios</th>
                                 </tr>
                             </thead>
@@ -134,9 +143,9 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        {% if reunion.link_reunion %}
-                                        <a href="{{ reunion.link_reunion }}" target="_blank" class="btn btn-sm btn-outline-secondary">
-                                            <i class="fas fa-link me-1"></i>Ver link
+                                        {% if reunion.link %}
+                                        <a href="{{ reunion.link }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-external-link-alt me-1"></i>Ver link
                                         </a>
                                         {% else %}
                                         <span class="text-muted">No disponible</span>
@@ -146,8 +155,8 @@
                                     <!-- Archivo -->
                                     <td>
                                         {% if reunion.archivo_adjunto %}
-                                            <a href="{{ reunion.archivo_adjunto.url }}" class="btn btn-sm btn-outline-dark" download>
-                                                <i class="fas fa-file-alt me-1"></i>Descargar
+                                            <a href="{{ reunion.archivo_adjunto.url }}" class="btn btn-sm btn-outline-primary" download>
+                                                <i class="fas fa-file-download me-1"></i>Acta
                                             </a>
                                         {% else %}
                                             <span class="text-muted">-</span>
@@ -155,15 +164,9 @@
                                     </td>
 
                                     <!-- Confirmar asistencia -->
-                                    <td>
-                                        {% if user.is_authenticated and not grupo.finalizado %}
-                                            <a href="{% url 'gspg:confirmar_asistencia' reunion.id %}" class="btn btn-sm btn-outline-success">
-                                                <i class="fas fa-check-circle me-1"></i>Confirmar
-                                            </a>
-                                        {% endif %}
-                                    </td>
 
-                                    <td>{{ reunion.comentario|default:"-"|truncatewords:10 }}</td>
+
+                                    <td>{{ reunion.comentarios|default:"-"|truncatewords:10 }}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>

@@ -23,3 +23,9 @@ def obtener_configuracion_universidad(nombre_universidad):
         'color_primario': '#1e40af',
         'color_secundario': '#3b82f6',
     }
+
+def cargar_configuracion_universidad(request, universidad):
+    config = obtener_configuracion_universidad(universidad)
+    request.session["logo_url"] = config["logo_url"]
+    request.session["color_primario"] = config["color_primario"]
+    request.session["color_secundario"] = config["color_secundario"]

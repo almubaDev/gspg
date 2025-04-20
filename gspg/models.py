@@ -80,7 +80,9 @@ class Estudiante(models.Model):
         max_length=15,
         choices=[('pendiente', 'Pendiente'), ('proceso', 'En proceso'), ('finalizado', 'Finalizado')],
         default='pendiente',
-        verbose_name="Proceso de Grado"
+        verbose_name="Proceso de Grado",
+        blank=True,
+        null=True
     )
     fecha_registro = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Registro")
 
@@ -139,7 +141,7 @@ class GrupoTrabajo(models.Model):
 
 # === REUNIÓN DE GRUPO ===
 class ReunionGrupo(models.Model):
-    # ... tus campos actuales ...
+    grupo = models.ForeignKey('GrupoTrabajo', on_delete=models.CASCADE, related_name='reuniones', verbose_name="Grupo de Trabajo")
     fecha = models.DateField()
     hora = models.TimeField()
     link = models.URLField(blank=True, null=True)
@@ -161,3 +163,17 @@ class AsistenciaReunion(models.Model):
 
     def __str__(self):
         return f"{self.estudiante} - {self.reunion} - {'Asistió' if self.asistio else 'No asistió'}"
+    
+    
+
+class ActaReunion(models.Model):
+    reunion = models.ForeignKey('ReunionGrupo', on_delete=models.CASCADE, related_name='actas')
+    archivo = models.FileField(upload_to='actas/')
+    fecha_subida = models.DateTimeField(auto_now_add=True)
+    subido_por = models.ForeignKey('Profesor', on_delete=models.SET_NULL, null=True)
+
+    class Meta:
+        ordering = ['-fecha_subida']
+
+    def __str__(self):
+        return f"Acta - {self.reunion.grupo.nombre} - {self.fecha_subida.strftime('%d/%m/%Y %H:%M')}"

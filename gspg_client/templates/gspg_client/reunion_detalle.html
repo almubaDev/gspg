@@ -1,0 +1,149 @@
+{% extends 'gspg_client/base.html' %}
+{% load static %}
+
+{% block title %}Detalle Reunión{% endblock %}
+
+{% block extra_css %}
+<style>
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 0.75rem;
+    }
+
+    .card {
+        background: white;
+        border-radius: 0.75rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        padding: 1.25rem;
+    }
+
+    .info-label {
+        color: #475569;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .info-value {
+        font-size: 0.95rem;
+        color: #0f172a;
+        font-weight: 600;
+    }
+
+    .btn-outline {
+        padding: 0.4rem 1rem;
+        font-size: 0.85rem;
+        border: 1px solid var(--color-principal);
+        color: var(--color-principal);
+        border-radius: 0.5rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        display: inline-block;
+    }
+
+    .btn-outline:hover {
+        background-color: var(--color-principal);
+        color: white;
+    }
+
+    .btn-solid {
+        padding: 0.4rem 1rem;
+        font-size: 0.85rem;
+        background-color: var(--color-principal);
+        color: white;
+        border-radius: 0.5rem;
+        font-weight: 500;
+        transition: background 0.2s ease;
+        display: inline-block;
+    }
+
+    .btn-solid:hover {
+        filter: brightness(1.05);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- 🏷 Información general -->
+    <div class="card border-l-4" style="border-color: var(--color-principal);">
+        <h2 class="text-base font-semibold text-[color:var(--color-principal)] mb-2">
+            Reunión del {{ reunion.fecha|date:"d/m/Y" }} – {{ reunion.hora|time:"H:i" }}
+        </h2>
+        <p class="text-sm text-gray-700 mb-1"><strong>Grupo:</strong> {{ grupo.nombre }}</p>
+        <p class="text-sm text-gray-700 mb-1"><strong>Intake:</strong> {{ intake.get_short_name }}</p>
+        <p class="text-sm text-gray-700 mb-1"><strong>Magíster:</strong> {{ magister.name }}</p>
+        <p class="text-sm text-gray-700"><strong>Universidad:</strong> {{ magister.university }}</p>
+    </div>
+
+    <!-- 🔗 Link de reunión -->
+    {% if reunion.link %}
+    <div class="card">
+        <div class="section-title">Link de reunión</div>
+        <a href="{{ reunion.link }}" target="_blank" class="text-blue-600 underline break-all text-sm">
+            {{ reunion.link }}
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- 💬 Comentario del profesor -->
+    <div class="card">
+        <div class="section-title">Comentario del profesor</div>
+        {% if reunion.comentarios %}
+            <p class="text-sm text-gray-700 whitespace-pre-line">{{ reunion.comentarios }}</p>
+        {% else %}
+            <p class="text-gray-400 italic text-sm">Sin comentarios registrados.</p>
+        {% endif %}
+    </div>
+
+    <!-- 📎 Acta -->
+    <div class="card">
+        <div class="section-title">Acta de la reunión</div>
+
+        {% if reunion.archivo_adjunto %}
+            <a href="{{ reunion.archivo_adjunto.url }}" download
+               class="btn-outline text-sm">
+                Descargar acta
+            </a>
+        {% else %}
+            <p class="text-gray-400 italic text-sm mb-2">Aún no se ha subido el acta.</p>
+        {% endif %}
+
+        {% if usuario_tipo == "profesor" %}
+        <form action="#" method="post" enctype="multipart/form-data" class="mt-4 space-y-3">
+            {% csrf_token %}
+            <label for="archivo_adjunto" class="block text-sm font-medium text-gray-700">
+                Subir nueva acta
+            </label>
+            <input type="file" name="archivo_adjunto" id="archivo_adjunto"
+                   class="block w-full text-sm border rounded-md p-2 bg-gray-50">
+            <button type="submit" class="btn-solid">
+                Subir archivo
+            </button>
+        </form>
+        {% endif %}
+    </div>
+
+    <!-- 🗒 Comentarios adicionales -->
+    <div class="card">
+        <div class="section-title">Comentarios adicionales</div>
+        <p class="text-gray-400 text-sm italic">Se habilitarán los comentarios para estudiantes próximamente.</p>
+    </div>
+
+    <!-- 🔙 Botón volver -->
+    <div class="flex justify-center">
+        {% if usuario_tipo == 'profesor' %}
+            <a href="{% url 'gspg_client:dashboard_profesor' %}" class="btn-outline">
+                ← Volver al panel
+            </a>
+        {% else %}
+            <a href="{% url 'gspg_client:dashboard_estudiante' %}" class="btn-outline">
+                ← Volver al panel
+            </a>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

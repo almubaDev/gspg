@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Subir Acta{% endblock %}
+
+{% block content %}
+<div class="container py-4 max-w-xl mx-auto">
+
+    <h1 class="h5 mb-4">Subir acta para reunión del {{ reunion.fecha|date:"d/m/Y" }}</h1>
+
+    <form method="post" enctype="multipart/form-data" class="bg-white p-4 rounded shadow">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+
+        <div class="mb-3">
+            {{ form.archivo.label_tag }}
+            {{ form.archivo }}
+            {% if form.archivo.errors %}
+                <div class="text-danger text-sm">{{ form.archivo.errors.0 }}</div>
+            {% endif %}
+        </div>
+
+        <button type="submit" class="btn btn-primary">Subir acta</button>
+    </form>
+
+</div>
+{% endblock %}

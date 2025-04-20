@@ -11,9 +11,9 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.lib import colors
-from .models import Intake, Estudiante, Persona, Profesor, GrupoTrabajo, ReunionGrupo, AsistenciaReunion
-from .forms import (IntakeForm, PersonaForm, EstudianteForm, EstudianteCompletoForm, EstudianteBulkUploadForm, ProfesorForm, GrupoTrabajoForm, 
-                    EstudianteAddForm, ReunionGrupoForm, AsistenciaReunionForm)
+from .models import Intake, Estudiante, Persona, Profesor, GrupoTrabajo, ReunionGrupo, AsistenciaReunion, ActaReunion
+from .forms import (IntakeForm, PersonaForm, EstudianteForm, EstudianteCompletoForm, EstudianteBulkUploadForm, ProfesorForm, 
+                    GrupoTrabajoForm, EstudianteAddForm, ReunionGrupoForm, AsistenciaReunionForm, ActaReunionForm)
 
 @login_required
 def dashboard(request):
@@ -180,8 +180,8 @@ def estudiante_list(request):
         'page_title': 'Estudiantes',
         'page_obj': page_obj,
         'intakes': intakes,
-        'estados': Estudiante.ESTADO_CHOICES,
-        'procesos_grado': Estudiante.PROCESO_GRADO_CHOICES,  # Para el filtro
+        'estados': Estudiante._meta.get_field('estado').choices,
+        'procesos_grado': Estudiante._meta.get_field('proceso_grado').choices,
         'selected_intake': intake_id,
         'selected_estado': estado,
         'selected_proceso_grado': proceso_grado,  # Para mantener selección
@@ -1417,3 +1417,30 @@ def set_active_programa(request, magister_id):
     else:
         messages.error(request, "No tienes acceso a ese programa.")
     return redirect('gspg:dashboard')
+
+
+def subir_acta(request, reunion_id):
+    if request.session.get('tipo') != 'profesor':
+        messages.warning(request, "No tienes permiso para acceder a esta página.")
+        return redirect('gspg_client:login')
+
+    reunion = get_object_or_404(ReunionGrupo, id=reunion_id)
+    profesor_id = request.session.get('id')
+    profesor = get_object_or_404(Profesor, id=profesor_id)
+
+    if request.method == 'POST':
+        form = ActaReunionForm(request.POST, request.FILES)
+        if form.is_valid():
+            acta = form.save(commit=False)
+            acta.reunion = reunion
+            acta.subido_por = profesor
+            acta.save()
+            messages.success(request, "Acta subida correctamente.")
+            return redirect('gspg_client:reunion_detalle', reunion_id=reunion.id)
+    else:
+        form = ActaReunionForm()
+
+    return render(request, 'gspg/subir_act_reunion.html', {
+        'form': form,
+        'reunion': reunion
+    })
