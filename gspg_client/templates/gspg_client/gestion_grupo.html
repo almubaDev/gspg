@@ -84,7 +84,7 @@
         width: 2rem;
         height: 2rem;
         border-radius: 9999px;
-        background-color: var(--color-secundario);
+        background-color:#ffffff;
         color: white;
         transition: all 0.2s;
     }
@@ -143,7 +143,7 @@
     <!-- Cabecera del grupo -->
     <div class="header-group">
         <div>
-            <h1 class="group-title">{{ grupo.nombre }}</h1>
+            <h1 class="group-title pt-3">{{ grupo.nombre }}</h1>
             <p class="group-subtitle">{{ grupo.intake.get_short_name }} | Profesor: {{ grupo.profesor.nombre }}</p>
         </div>
         
@@ -179,7 +179,7 @@
                       {% if reunion.link %}
                       <a href="{{ reunion.link }}" target="_blank"
                          class="action-icon"
-                         style="background-color: {{ request.session.color_secundario|default:'#3b82f6' }};"
+                         style="color: {{ request.session.color_secundario|default:'#3b82f6' }};"
                          title="Entrar a reunión">
                         <i class="fas fa-video"></i>
                       </a>
@@ -190,7 +190,7 @@
                     <td class="text-center">
                       <a href="{% url 'gspg_client:reunion_detalle' reunion.id %}"
                          class="action-icon"
-                         style="background-color: {{ request.session.color_secundario|default:'#1e40af' }};"
+                         style="color: {{ request.session.color_secundario|default:'#1e40af' }};"
                          title="Ver detalle">
                         <i class="fas fa-eye"></i>
                       </a>

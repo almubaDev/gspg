@@ -177,3 +177,27 @@ class ActaReunion(models.Model):
 
     def __str__(self):
         return f"Acta - {self.reunion.grupo.nombre} - {self.fecha_subida.strftime('%d/%m/%Y %H:%M')}"
+
+
+class ComentarioReunion(models.Model):
+    reunion = models.ForeignKey(ReunionGrupo, on_delete=models.CASCADE)
+    # Campos para diferentes tipos de autores
+    autor_persona = models.ForeignKey(Persona, on_delete=models.CASCADE, null=True, blank=True)
+    autor_profesor = models.ForeignKey(Profesor, on_delete=models.CASCADE, null=True, blank=True)
+    contenido = models.TextField()
+    creado_en = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['creado_en']
+    
+    @property
+    def nombre_autor(self):
+        """Devuelve el nombre del autor, sea Persona o Profesor"""
+        if self.autor_persona:
+            return self.autor_persona.nombre_completo
+        elif self.autor_profesor:
+            return self.autor_profesor.nombre
+        return "Anónimo"
+        
+    def __str__(self):
+        return f"Comentario de {self.nombre_autor} - {self.creado_en.strftime('%d/%m/%Y %H:%M')}"

@@ -2,7 +2,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.utils.timezone import now
 from django.contrib import messages
-from gspg.models import Estudiante, Profesor, ReunionGrupo, GrupoTrabajo, ActaReunion, AsistenciaReunion
+from gspg.models import (Estudiante, Profesor, ReunionGrupo, GrupoTrabajo, ActaReunion, 
+                         AsistenciaReunion,ComentarioReunion)
 from .forms import ActaReunionForm
 from django.utils import timezone
 
@@ -289,4 +290,58 @@ def comentarios_reunion(request, reunion_id):
         'reunion': reunion,
         'comentarios': comentarios,
         'persona': persona,
+    })
+
+
+def get_persona_sesion(request):
+    """
+    Obtiene el objeto Persona (Profesor o Estudiante) basado en la sesión actual.
+    """
+    tipo = request.session.get('tipo')
+    usuario_id = request.session.get('id')
+    
+    if tipo == 'profesor':
+        return get_object_or_404(Profesor, id=usuario_id)
+    elif tipo == 'estudiante':
+        estudiante = get_object_or_404(Estudiante, id=usuario_id)
+        return estudiante.persona
+    else:
+        return None
+    
+    
+def comentarios_reunion(request, reunion_id):
+    reunion = get_object_or_404(ReunionGrupo, id=reunion_id)
+    tipo_usuario = request.session.get('tipo')
+    usuario_id = request.session.get('id')
+    
+    # Obtener el autor según el tipo de usuario
+    autor_persona = None
+    autor_profesor = None
+    if tipo_usuario == 'estudiante':
+        estudiante = get_object_or_404(Estudiante, id=usuario_id)
+        autor_persona = estudiante.persona
+    elif tipo_usuario == 'profesor':
+        autor_profesor = get_object_or_404(Profesor, id=usuario_id)
+
+    if request.method == 'POST':
+        contenido = request.POST.get('comentario', '').strip()
+        if contenido:
+            # Crear el comentario con el autor correcto
+            ComentarioReunion.objects.create(
+                reunion=reunion,
+                autor_persona=autor_persona,
+                autor_profesor=autor_profesor,
+                contenido=contenido
+            )
+        return redirect('gspg_client:comentarios_reunion', reunion_id=reunion.id)
+
+    # Obtener los comentarios de la reunión
+    comentarios = ComentarioReunion.objects.filter(reunion=reunion).order_by('creado_en')
+
+    return render(request, 'gspg_client/comentarios_reunion.html', {
+        'reunion': reunion,
+        'comentarios': comentarios,
+        'es_profesor': tipo_usuario == 'profesor',
+        'autor_persona': autor_persona,
+        'autor_profesor': autor_profesor,
     })

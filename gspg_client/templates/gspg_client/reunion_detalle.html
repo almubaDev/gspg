@@ -8,13 +8,13 @@
 <style>
     /* Estilos específicos para el detalle de reunión */
     .reunion-header {
-        border-left: 4px solid var(--color-principal);
+        border-left: 4px solid var(--color-principal); /* Usa variable de color principal */
     }
     
     .reunion-title {
         font-size: 1.25rem;
         font-weight: 700;
-        color: var(--color-principal);
+        color: var(--color-principal); /* Usa variable de color principal */
         margin-bottom: 0.5rem;
     }
     
@@ -48,7 +48,7 @@
     
     .file-icon {
         font-size: 1.5rem;
-        color: var(--color-principal);
+        color: var(--color-principal); /* Usa variable de color principal */
     }
     
     .file-info {
@@ -76,7 +76,7 @@
     }
     
     .upload-zone:hover {
-        border-color: var(--color-secundario);
+        border-color: var(--color-secundario); /* Usa variable de color secundario */
         background-color: rgba(var(--color-secundario-rgb), 0.05);
     }
     
@@ -106,7 +106,7 @@
     .comentario-autor {
         font-weight: 600;
         font-size: 0.9rem;
-        color: var(--color-principal);
+        color: var(--color-principal); /* Usa variable de color principal */
         margin-bottom: 0.25rem;
     }
     
@@ -181,6 +181,23 @@
     .radio-option input[type="radio"]:checked + label.option-ausente {
         background-color: #ef4444;
         color: white;
+    }
+    
+    /* Estilos para el botón flotante */
+    .boton-flotante {
+        position: fixed;
+        bottom: 35%;
+        right: 1rem; /* Cambiado de left a right */
+        transform: translateY(50%);
+        width: 3.5rem;
+        height: 3.5rem;
+        border-radius: 9999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        z-index: 9999;
     }
 </style>
 {% endblock %}
@@ -260,40 +277,23 @@
 
   
     <!-- Volver -->
-    <div class="mt-6">
-        <a href="{% url 'gspg_client:dashboard_profesor' %}" class="text-sm text-[var(--color-secundario)] underline">
-          ← Volver al inicio
+      <div class="flex justify-between mt-6">
+        <a href="{% url 'gspg_client:gestion_grupo' grupo.id %}" class="btn-outline">
+            <i class="fas fa-arrow-left mr-1"></i> Volver
         </a>
       </div>
 </div>
 
-    <!-- Botón flotante de Comentarios -->
-    <a href="{% url 'gspg_client:comentarios_reunion' reunion.id %}"
-       title="Comentarios"
-       class="boton-comentarios w-14 h-14 rounded-full flex items-center justify-center text-white shadow-lg"
-       style="
-         background-color: {{ request.session.color_secundario|default:'#3b82f6' }};
-         box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-       ">
-      <i class="fas fa-comment-dots text-xl"></i>
-    </a>
-
+<!-- Botón flotante fuera del div principal -->
+<a href="{% url 'gspg_client:comentarios_reunion' reunion.id %}"
+   title="Comentarios"
+   class="boton-flotante"
+   style="background-color: {{ request.session.color_secundario|default:'#3b82f6' }};">
+    <i class="fas fa-comment-dots text-xl"></i>
+</a>
 {% endblock %}
 
-
 {% block extra_js %}
-<script>
-    // Asegurar que el botón flotante no sea tapado por scroll u otros elementos
-    document.addEventListener('DOMContentLoaded', function () {
-      const botonFlotante = document.querySelector('.boton-comentarios');
-      if (botonFlotante) {
-        botonFlotante.style.position = 'fixed';
-        botonFlotante.style.bottom = '2rem';
-        botonFlotante.style.right = '2rem';
-        botonFlotante.style.zIndex = '9999';
-      }
-    });
-</script>
 <script>
     // Script para manejar el modal de asistencia
     document.addEventListener('DOMContentLoaded', function() {
