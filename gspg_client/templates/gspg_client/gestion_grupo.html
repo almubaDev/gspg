@@ -3,227 +3,38 @@
 
 {% block title %}Gestión del Grupo{% endblock %}
 
-{% block extra_css %}
-<style>
-    /* Estilos específicos para la gestión de grupo */
-    .header-group {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-    }
-    
-    @media (min-width: 640px) {
-        .header-group {
-            flex-direction: row;
-            justify-content: space-between;
-            align-items: center;
-        }
-    }
-    
-    .group-title {
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: var(--color-principal);
-        line-height: 1.2;
-    }
-    
-    .group-subtitle {
-        font-size: 0.9rem;
-        color: var(--color-muted);
-    }
-    
-    .crear-reunion-btn {
-        background-color: var(--color-secundario);
-        color: white;
-        font-weight: 600;
-        font-size: 0.875rem;
-        padding: 0.6rem 1.2rem;
-        border-radius: var(--radius-md);
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        transition: all 0.2s ease;
-    }
-    
-    .crear-reunion-btn:hover {
-        background-color: var(--color-secundario-hover);
-        transform: translateY(-2px);
-    }
-    
-    .reunion-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 0.9rem;
-    }
-    
-    .reunion-table th {
-        background-color: var(--color-principal);
-        color: white;
-        font-weight: 600;
-        padding: 0.75rem 1rem;
-        text-align: left;
-    }
-    
-    .reunion-table td {
-        padding: 0.75rem 1rem;
-        border-bottom: 1px solid var(--color-border);
-    }
-    
-    .reunion-table tr:nth-child(even) td {
-        background-color: rgba(0, 0, 0, 0.02);
-    }
-    
-    .reunion-table tr:hover td {
-        background-color: rgba(var(--color-principal-rgb), 0.05);
-    }
-    
-    .action-icon {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 2rem;
-        height: 2rem;
-        border-radius: 9999px;
-        background-color:#ffffff;
-        color: white;
-        transition: all 0.2s;
-    }
-    
-    .action-icon:hover {
-        background-color: var(--color-secundario-hover);
-        transform: scale(1.1);
-    }
-    
-    .estado-badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.25rem 0.75rem;
-        border-radius: 9999px;
-        font-size: 0.75rem;
-        font-weight: 600;
-    }
-    
-    .estado-programada {
-        background-color: var(--color-principal);
-        color: white;
-    }
-    
-    .estado-realizada {
-        background-color: var(--color-success);
-        color: white;
-    }
-    
-    .estado-cancelada {
-        background-color: var(--color-danger);
-        color: white;
-    }
-    
-    .estado-proxima {
-        background-color: var(--color-warning);
-        color: #1f2937;
-    }
-    
-    .no-reuniones {
-        text-align: center;
-        padding: 3rem 0;
-        color: var(--color-muted);
-    }
-    
-    .no-reuniones-icon {
-        font-size: 3rem;
-        margin-bottom: 1rem;
-        opacity: 0.3;
-    }
-</style>
-{% endblock %}
-
 {% block content %}
 <div class="container mx-auto px-4 space-y-6">
 
     <!-- Cabecera del grupo -->
-    <div class="header-group">
-        <div>
-            <h1 class="group-title pt-3">{{ grupo.nombre }}</h1>
-            <p class="group-subtitle">{{ grupo.intake.get_short_name }} | Profesor: {{ grupo.profesor.nombre }}</p>
+    <div class="header-group mt-4">
+        <div class="mb-2">
+            <h1 class="group-title text-xl font-bold text-[color:var(--color-principal)]">{{ grupo.nombre }}</h1>
+            <p class="text-sm text-gray-500">{{ grupo.intake.get_short_name }} | Profesor: {{ grupo.profesor.nombre }}</p>
         </div>
-        
-        <a href="#" class="crear-reunion-btn" style="background-color: {{ request.session.color_secundario|default:'#1e40af' }};">
-            <i class="fas fa-plus"></i>
-            <span>Crear reunión</span>
-        </a>
+        <div class="flex flex-col gap-2 mt-4">
+            <a href="{% url 'gspg_client:crear_reunion_cliente' grupo.id %}" 
+                class="w-full block text-center py-2 rounded-xl text-white font-medium"
+                style="background-color: var(--color-secundario);">
+                Crear Reunión
+            </a>
+            <a href="#" class="text-white w-full text-center px-3 py-2 rounded text-sm font-semibold"
+               style="background-color: {{ request.session.color_secundario|default:'#1e40af' }};">
+                <i class="fas fa-file-alt mr-1"></i> Ver actas
+            </a>
+        </div>
     </div>
 
-    <!-- Sección de Reuniones -->
-    <div class="card">
-        <h2 class="section-title">
-            <i class="fas fa-calendar-alt mr-2 text-principal"></i>Reuniones programadas
-        </h2>
-        
-        {% if reuniones %}
-        <div class="overflow-x-auto mt-4">
-            <table class="reunion-table">
-                <thead>
-                  <tr>
-                    <th>Fecha</th>
-                    <th>Hora</th>
-                    <th class="text-center">Link</th>
-                    <th class="text-center">Detalle</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for reunion in reuniones %}
-                  <tr>
-                    <td>{{ reunion.fecha|date:"d/m/Y" }}</td>
-                    <td>{{ reunion.hora|time:"H:i" }}</td>
-                    <td class="text-center">
-                      {% if reunion.link %}
-                      <a href="{{ reunion.link }}" target="_blank"
-                         class="action-icon"
-                         style="color: {{ request.session.color_secundario|default:'#3b82f6' }};"
-                         title="Entrar a reunión">
-                        <i class="fas fa-video"></i>
-                      </a>
-                      {% else %}
-                      <span class="text-gray-400">—</span>
-                      {% endif %}
-                    </td>
-                    <td class="text-center">
-                      <a href="{% url 'gspg_client:reunion_detalle' reunion.id %}"
-                         class="action-icon"
-                         style="color: {{ request.session.color_secundario|default:'#1e40af' }};"
-                         title="Ver detalle">
-                        <i class="fas fa-eye"></i>
-                      </a>
-                    </td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>   
-        </div>
-        {% else %}
-        <div class="no-reuniones">
-            <div class="no-reuniones-icon">
-                <i class="far fa-calendar-times"></i>
-            </div>
-            <p>No hay reuniones programadas para este grupo.</p>
-            <a href="#" class="btn-outline mt-4">Programar primera reunión</a>
-        </div>
-        {% endif %}
-    </div>
-    
     <!-- Sección de Estudiantes -->
     <div class="card">
         <h2 class="section-title">
             <i class="fas fa-user-graduate mr-2 text-principal"></i>Estudiantes del grupo
         </h2>
-        
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mt-4">
             {% for estudiante in grupo.estudiantes.all %}
             <div class="flex items-center p-3 border border-gray-200 rounded-md">
-                <div class="flex-shrink-0 mr-3">
-                    <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-500">
-                        <i class="fas fa-user"></i>
-                    </div>
+                <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 mr-3">
+                    <i class="fas fa-user"></i>
                 </div>
                 <div class="min-w-0 flex-1">
                     <p class="text-sm font-medium truncate">{{ estudiante.persona.nombre_completo }}</p>
@@ -237,25 +48,66 @@
             {% endfor %}
         </div>
     </div>
-    
-    <!-- Botones de navegación -->
-    <div class="flex justify-between mt-6">
+
+    <!-- Sección de Reuniones -->
+    <div class="card">
+        <h2 class="section-title">
+            <i class="fas fa-calendar-alt mr-2 text-principal"></i>Reuniones programadas
+        </h2>
+
+        {% if reuniones %}
+        <div class="overflow-x-auto mt-4 max-h-[360px] overflow-y-auto">
+            <table class="reunion-table w-full text-sm text-left">
+                <thead class="text-white" style="background-color: var(--color-principal);">
+                    <tr>
+                        <th class="py-3 px-4">Fecha</th>
+                        <th class="py-3 px-4">Hora</th>
+                        <th class="py-3 px-4 text-center">Link</th>
+                        <th class="py-3 px-4 text-center">Detalle</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reunion in reuniones %}
+                    <tr class="{% if reunion.fecha < today %}opacity-50{% endif %}">
+                        <td class="py-2 px-4">{{ reunion.fecha|date:"d/m/Y" }}</td>
+                        <td class="py-2 px-4">{{ reunion.hora|time:"H:i" }}</td>
+                        <td class="py-2 px-4 text-center">
+                            {% if reunion.link and reunion.fecha >= today %}
+                            <a href="{{ reunion.link }}" target="_blank" class="action-icon"
+                               style="color: {{ request.session.color_secundario|default:'#3b82f6' }};"
+                               title="Entrar a reunión">
+                                <i class="fas fa-video"></i>
+                            </a>
+                            {% else %}
+                            <span class="text-gray-400"><i class="fas fa-video-slash"></i></span>
+                            {% endif %}
+                        </td>
+                        <td class="py-2 px-4 text-center">
+                            <a href="{% url 'gspg_client:reunion_detalle' reunion.id %}" class="action-icon"
+                               style="color: {{ request.session.color_secundario|default:'#1e40af' }};"
+                               title="Ver detalle">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="no-reuniones text-center py-6 text-gray-500">
+            <i class="far fa-calendar-times text-3xl mb-2"></i>
+            <p>No hay reuniones programadas para este grupo.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Botón volver -->
+    <div class="flex justify-start mt-6">
         <a href="{% url 'gspg_client:dashboard_profesor' %}" class="btn-outline">
             <i class="fas fa-arrow-left mr-1"></i> Volver al panel
         </a>
     </div>
 
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    // Para proporcionar la fecha y hora actual al template
-    document.addEventListener('DOMContentLoaded', function() {
-        window.now = {
-            date: new Date().toISOString().split('T')[0],
-            time: new Date().toTimeString().split(' ')[0].substring(0, 5)
-        };
-    });
-</script>
 {% endblock %}

@@ -2,12 +2,12 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.utils.timezone import now
 from django.contrib import messages
+from django.utils.dateformat import DateFormat
+from django.utils.formats import get_format
 from gspg.models import (Estudiante, Profesor, ReunionGrupo, GrupoTrabajo, ActaReunion, 
                          AsistenciaReunion,ComentarioReunion)
 from .forms import ActaReunionForm
-from django.utils import timezone
-
-
+import json
 
 
 # -----------------------------
@@ -171,6 +171,21 @@ def gestion_grupo(request, grupo_id):
         "grupo": grupo,
         "reuniones": reuniones,
     })
+
+
+def crear_reunion_cliente(request, grupo_pk):
+    grupo = get_object_or_404(GrupoTrabajo, pk=grupo_pk)
+
+    # Obtener fechas ocupadas para ese grupo
+    reuniones = ReunionGrupo.objects.filter(grupo=grupo)
+    fechas_ocupadas = list(reuniones.values_list('fecha', flat=True))
+    fechas_ocupadas_str = [df.strftime('%Y-%m-%d') for df in fechas_ocupadas]
+
+    context = {
+        'grupo': grupo,
+        'fechas_ocupadas_json': json.dumps(fechas_ocupadas_str)
+    }
+    return render(request, 'gspg_client/crear_reunion.html', context)
 
 
 def reunion_detalle(request, reunion_id):
