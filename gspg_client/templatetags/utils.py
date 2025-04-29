@@ -6,3 +6,4 @@ def get_item(value, key):
     if isinstance(value, dict):
         return value.get(key)
     return None  # o '' si prefieres no mostrar nada
+

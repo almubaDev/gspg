@@ -170,35 +170,54 @@ class GrupoTrabajoForm(forms.ModelForm):
             
             # Para edición
             if self.instance and self.instance.pk:
-                self.fields['intake'].widget.attrs['disabled'] = True
-                self.fields['intake'].required = False
+                # Usar readonly en lugar de disabled para que se envíe el valor
+                self.fields['intake'].widget.attrs['readonly'] = True
+                self.fields['intake'].widget.attrs['class'] += ' bg-light'
                 
-                # Importante: NO pre-cargamos estudiantes aquí, lo hará el JavaScript
-                # Simplemente indicamos un queryset vacío para evitar duplicación
-                self.fields['estudiantes'].queryset = Estudiante.objects.none()
+                # No pre-cargamos estudiantes aquí, lo hará el JavaScript
+                # Pero usamos una clase visual en lugar de disabled
+                self.fields['estudiantes'].queryset = Estudiante.objects.filter(
+                    intake=self.instance.intake
+                )
             else:
-                # Para creación, deshabilitamos estudiantes hasta que seleccionen intake
-                self.fields['estudiantes'].widget.attrs['disabled'] = True
-                self.fields['estudiantes'].required = False
+                # Para creación, usamos clase visual para los estudiantes
+                self.fields['estudiantes'].widget.attrs['class'] += ' disabled-appearance'
+                self.fields['estudiantes'].widget.attrs['tabindex'] = '-1'
                 self.fields['estudiantes'].help_text = "Primero selecciona un intake para ver los estudiantes disponibles."
+                self.fields['estudiantes'].queryset = Estudiante.objects.none()
                 
-            # Si el grupo está finalizado, no permitir cambios
+            # Si el grupo está finalizado, no permitir cambios (usando readonly)
             if self.instance and self.instance.pk and self.instance.finalizado:
                 for field_name in self.fields:
-                    self.fields[field_name].widget.attrs['disabled'] = True
-                    self.fields[field_name].required = False
+                    self.fields[field_name].widget.attrs['readonly'] = True
+                    self.fields[field_name].widget.attrs['class'] += ' bg-light'
     
     def clean(self):
         cleaned_data = super().clean()
         
-        # Si el intake está deshabilitado, recuperar su valor del instance
-        if 'intake' not in cleaned_data or not cleaned_data['intake']:
+        # Si el intake no está en cleaned_data, intentar recuperarlo
+        if 'intake' not in cleaned_data or not cleaned_data.get('intake'):
+            # Recuperar del instance en modo edición
             if self.instance and self.instance.pk and self.instance.intake:
                 cleaned_data['intake'] = self.instance.intake
+            # Si hay un intake_id en los datos POST, intentar recuperarlo
+            elif 'intake' in self.data:
+                try:
+                    intake_id = self.data.get('intake')
+                    if intake_id:
+                        cleaned_data['intake'] = Intake.objects.get(id=intake_id)
+                except (Intake.DoesNotExist, ValueError):
+                    pass
+        
+        # Si estudiantes no está en cleaned_data, intentar recuperarlos
+        if 'estudiantes' not in cleaned_data or not cleaned_data.get('estudiantes'):
+            estudiante_ids = self.data.getlist('estudiantes')
+            if estudiante_ids:
+                cleaned_data['estudiantes'] = Estudiante.objects.filter(id__in=estudiante_ids)
         
         # Si el magister no está especificado, usar el magister activo del usuario
         if 'magister' not in cleaned_data or not cleaned_data.get('magister'):
-            if hasattr(self, 'user') and self.user and hasattr(self.user, 'active_magister') and self.user.active_magister:
+            if hasattr(self, 'user') and self.user and hasattr(self.user, 'active_magister'):
                 cleaned_data['magister'] = self.user.active_magister
         
         # Validar que la fecha de finalización sea posterior a la de inicio

@@ -94,29 +94,186 @@ def logout_view(request):
 # -----------------------------
 # DASHBOARD ESTUDIANTE
 # -----------------------------
+
 def dashboard_estudiante(request):
     if request.session.get('tipo') != 'estudiante':
         return redirect('gspg_client:login')
 
     estudiante_id = request.session.get('id')
-    estudiante = Estudiante.objects.select_related('persona').get(id=estudiante_id)
+    estudiante = Estudiante.objects.select_related('persona', 'intake__magister').get(id=estudiante_id)
 
+    # Obtener los grupos del estudiante
     grupos = estudiante.grupos_trabajo.select_related('intake__magister').all()
-    reuniones_proximas = ReunionGrupo.objects.filter(
+    
+    # Obtener la próxima reunión (la más cercana en el futuro)
+    proxima_reunion = ReunionGrupo.objects.filter(
         grupo__in=grupos,
         fecha__gte=timezone.now().date()
-    ).order_by('fecha')[:5]
-
-    # Asumimos que todos los grupos del estudiante son del mismo magíster
-    magister = grupos[0].intake.magister if grupos else None
+    ).order_by('fecha', 'hora').first()
+    
+    # Contar reuniones pendientes (futuras)
+    reuniones_pendientes = ReunionGrupo.objects.filter(
+        grupo__in=grupos,
+        fecha__gte=timezone.now().date()
+    ).count()
+    
+    # Obtener asistencias del estudiante
+    asistencias = AsistenciaReunion.objects.filter(
+        estudiante=estudiante
+    ).select_related('reunion__grupo').order_by('-reunion__fecha')
+    
+    # Calcular estadísticas de asistencia
+    total_reuniones_pasadas = ReunionGrupo.objects.filter(
+        grupo__in=grupos,
+        fecha__lt=timezone.now().date()
+    ).count()
+    
+    reuniones_asistidas = asistencias.filter(asistio=True).count()
+    
+    # Calcular porcentaje de asistencia
+    porcentaje_asistencia = 0
+    if total_reuniones_pasadas > 0:
+        porcentaje_asistencia = int((reuniones_asistidas / total_reuniones_pasadas) * 100)
+    
+    # Obtener actas de reuniones
+    actas = ActaReunion.objects.filter(
+        reunion__grupo__in=grupos
+    ).select_related('reunion', 'reunion__grupo').order_by('-fecha_subida')
+    
+    # Agrupar actas por grupo
+    actas_por_grupo = {}
+    for acta in actas:
+        grupo_id = acta.reunion.grupo.id
+        if grupo_id not in actas_por_grupo:
+            actas_por_grupo[grupo_id] = []
+        actas_por_grupo[grupo_id].append(acta)
+    
+    # Obtener el magíster del estudiante
+    magister = estudiante.intake.magister if estudiante.intake else None
 
     context = {
         'estudiante': estudiante,
         'grupos': grupos,
-        'reuniones_proximas': reuniones_proximas,
+        'proxima_reunion': proxima_reunion,
+        'reuniones_pendientes': reuniones_pendientes,
+        'reuniones_asistidas': reuniones_asistidas,
+        'asistencias': asistencias,
+        'porcentaje_asistencia': porcentaje_asistencia,
+        'actas': actas,
+        'actas_por_grupo': actas_por_grupo,
         'magister': magister,
     }
     return render(request, 'gspg_client/dashboard_estudiante.html', context)
+
+def historial_asistencia(request):
+    """
+    Vista para mostrar el historial completo de asistencia de un estudiante
+    """
+    if request.session.get('tipo') != 'estudiante':
+        return redirect('gspg_client:login')
+        
+    estudiante_id = request.session.get('id')
+    estudiante = get_object_or_404(Estudiante, id=estudiante_id)
+    
+    # Obtener todas las asistencias del estudiante
+    asistencias = AsistenciaReunion.objects.filter(
+        estudiante=estudiante
+    ).select_related('reunion__grupo').order_by('-reunion__fecha')
+    
+    # Calcular estadísticas
+    total_reuniones = asistencias.count()
+    reuniones_asistidas = asistencias.filter(asistio=True).count()
+    
+    # Calcular porcentaje de asistencia
+    porcentaje_asistencia = 0
+    if total_reuniones > 0:
+        porcentaje_asistencia = int((reuniones_asistidas / total_reuniones) * 100)
+    
+    context = {
+        'estudiante': estudiante,
+        'asistencias': asistencias,
+        'total_reuniones': total_reuniones,
+        'reuniones_asistidas': reuniones_asistidas,
+        'porcentaje_asistencia': porcentaje_asistencia,
+    }
+    
+    return render(request, 'gspg_client/historial_asistencia.html', context)
+
+def actas_disponibles(request):
+    """
+    Vista para mostrar todas las actas disponibles para un estudiante
+    """
+    if request.session.get('tipo') != 'estudiante':
+        return redirect('gspg_client:login')
+        
+    estudiante_id = request.session.get('id')
+    estudiante = get_object_or_404(Estudiante, id=estudiante_id)
+    
+    # Obtener los grupos del estudiante
+    grupos = estudiante.grupos_trabajo.all()
+    
+    # Obtener todas las actas de reuniones de los grupos del estudiante
+    actas = ActaReunion.objects.filter(
+        reunion__grupo__in=grupos
+    ).select_related('reunion', 'reunion__grupo').order_by('-fecha_subida')
+    
+    # Agrupar actas por grupo
+    actas_por_grupo = {}
+    for acta in actas:
+        grupo_nombre = acta.reunion.grupo.nombre
+        if grupo_nombre not in actas_por_grupo:
+            actas_por_grupo[grupo_nombre] = []
+        actas_por_grupo[grupo_nombre].append(acta)
+    
+    context = {
+        'estudiante': estudiante,
+        'actas': actas,
+        'actas_por_grupo': actas_por_grupo,
+        'grupos': grupos
+    }
+    
+    return render(request, 'gspg_client/actas_disponibles.html', context)
+
+def ver_grupo_estudiante(request, grupo_id):
+    """
+    Vista para que un estudiante vea detalles de un grupo específico
+    """
+    if request.session.get('tipo') != 'estudiante':
+        return redirect('gspg_client:login')
+        
+    estudiante_id = request.session.get('id')
+    estudiante = get_object_or_404(Estudiante, id=estudiante_id)
+    
+    # Verificar que el estudiante pertenezca al grupo
+    grupo = get_object_or_404(GrupoTrabajo, id=grupo_id, estudiantes=estudiante)
+    
+    # Obtener las reuniones del grupo
+    reuniones = ReunionGrupo.objects.filter(grupo=grupo).order_by('-fecha', '-hora')
+    reuniones_pasadas = reuniones.filter(fecha__lt=timezone.now().date())
+    reuniones_futuras = reuniones.filter(fecha__gte=timezone.now().date())
+    
+    # Obtener la asistencia del estudiante a las reuniones de este grupo
+    asistencias = AsistenciaReunion.objects.filter(
+        estudiante=estudiante,
+        reunion__grupo=grupo
+    )
+    
+    # Crear un diccionario para facilitar el acceso a la asistencia por reunión
+    asistencias_dict = {a.reunion_id: a.asistio for a in asistencias}
+    
+    # Obtener actas de reuniones de este grupo
+    actas = ActaReunion.objects.filter(reunion__grupo=grupo).order_by('-fecha_subida')
+    
+    context = {
+        'estudiante': estudiante,
+        'grupo': grupo,
+        'reuniones_pasadas': reuniones_pasadas,
+        'reuniones_futuras': reuniones_futuras,
+        'asistencias_dict': asistencias_dict,
+        'actas': actas
+    }
+    
+    return render(request, 'gspg_client/grupo_estudiante.html', context)
 
 
 # -----------------------------
@@ -124,6 +281,7 @@ def dashboard_estudiante(request):
 # -----------------------------
 
 def dashboard_profesor(request):
+
     if request.session.get("tipo") != "profesor":
         return redirect("gspg_client:login")
 
@@ -174,9 +332,39 @@ def gestion_grupo(request, grupo_id):
 
 
 def crear_reunion_cliente(request, grupo_pk):
-    grupo = get_object_or_404(GrupoTrabajo, pk=grupo_pk)
+    """Vista para crear una reunión desde el cliente"""
+    # Verificar que el usuario sea un profesor
+    if request.session.get("tipo") != "profesor":
+        return redirect("gspg_client:login")
 
-    # Obtener fechas ocupadas para ese grupo
+    profesor_id = request.session.get("id")
+    profesor = get_object_or_404(Profesor, id=profesor_id)
+    grupo = get_object_or_404(GrupoTrabajo, pk=grupo_pk, profesor=profesor)
+
+    # Procesar el formulario si es un POST
+    if request.method == 'POST':
+        fecha = request.POST.get("fecha")
+        hora = request.POST.get("hora")
+        
+        if fecha and hora:
+            try:
+                # Crear la reunión con el modelo compartido
+                reunion = ReunionGrupo.objects.create(
+                    grupo=grupo,
+                    fecha=fecha,
+                    hora=hora,
+                    # Campos opcionales
+                    link="",
+                    comentarios=""
+                )
+                messages.success(request, "Reunión programada exitosamente.")
+                return redirect("gspg_client:gestion_grupo", grupo_id=grupo_pk)
+            except Exception as e:
+                messages.error(request, f"Error al programar la reunión: {str(e)}")
+        else:
+            messages.error(request, "Debe proporcionar fecha y hora para la reunión.")
+
+    # Para GET, mostrar el formulario
     reuniones = ReunionGrupo.objects.filter(grupo=grupo)
     fechas_ocupadas = list(reuniones.values_list('fecha', flat=True))
     fechas_ocupadas_str = [df.strftime('%Y-%m-%d') for df in fechas_ocupadas]

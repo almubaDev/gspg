@@ -18,35 +18,22 @@
                 style="background-color: var(--color-secundario);">
                 Crear Reunión
             </a>
-            <a href="#" class="text-white w-full text-center px-3 py-2 rounded text-sm font-semibold"
-               style="background-color: {{ request.session.color_secundario|default:'#1e40af' }};">
-                <i class="fas fa-file-alt mr-1"></i> Ver actas
-            </a>
+            <button id="btn-ver-actas" class="text-white w-full text-center px-3 py-2 rounded text-sm font-semibold" 
+                style="background-color: {{ request.session.color_secundario|default:'#1e40af' }};">
+                 <i class="fas fa-file-alt mr-1"></i> Ver actas
+            </button>
         </div>
     </div>
 
-    <!-- Sección de Estudiantes -->
+    <!-- Botón para Ver Integrantes -->
     <div class="card">
-        <h2 class="section-title">
-            <i class="fas fa-user-graduate mr-2 text-principal"></i>Estudiantes del grupo
-        </h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mt-4">
-            {% for estudiante in grupo.estudiantes.all %}
-            <div class="flex items-center p-3 border border-gray-200 rounded-md">
-                <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 mr-3">
-                    <i class="fas fa-user"></i>
-                </div>
-                <div class="min-w-0 flex-1">
-                    <p class="text-sm font-medium truncate">{{ estudiante.persona.nombre_completo }}</p>
-                    <p class="text-xs text-gray-500 truncate">{{ estudiante.persona.correo_institucional }}</p>
-                </div>
-            </div>
-            {% empty %}
-            <div class="col-span-full text-center py-4 text-gray-500">
-                No hay estudiantes asignados a este grupo.
-            </div>
-            {% endfor %}
-        </div>
+        <button id="btn-ver-integrantes" type="button" 
+                class="w-full flex items-center justify-center gap-2 py-3 px-4 text-white font-medium rounded-xl"
+                style="background-color: {{ request.session.color_primario|default:'#1e40af' }};">
+            <i class="fas fa-user-graduate"></i>
+            {% comment %} Ver integrantes del grupo ({{ grupo.estudiantes.count }}) {% endcomment %}
+            Lista de estudiantes en el grupo
+        </button>
     </div>
 
     <!-- Sección de Reuniones -->
@@ -56,9 +43,9 @@
         </h2>
 
         {% if reuniones %}
-        <div class="overflow-x-auto mt-4 max-h-[360px] overflow-y-auto">
+        <div class="overflow-x-auto mt-4" style="max-height: 210px; overflow-y: auto;">
             <table class="reunion-table w-full text-sm text-left">
-                <thead class="text-white" style="background-color: var(--color-principal);">
+                <thead class="text-white sticky top-0" style="background-color: var(--color-principal);">
                     <tr>
                         <th class="py-3 px-4">Fecha</th>
                         <th class="py-3 px-4">Hora</th>
@@ -68,18 +55,23 @@
                 </thead>
                 <tbody>
                     {% for reunion in reuniones %}
-                    <tr class="{% if reunion.fecha < today %}opacity-50{% endif %}">
+                    {% now "Y-m-d" as today_date %}
+                    <tr class="{% if reunion.fecha|date:'Y-m-d' < today_date %}opacity-50{% endif %}">
                         <td class="py-2 px-4">{{ reunion.fecha|date:"d/m/Y" }}</td>
                         <td class="py-2 px-4">{{ reunion.hora|time:"H:i" }}</td>
                         <td class="py-2 px-4 text-center">
-                            {% if reunion.link and reunion.fecha >= today %}
-                            <a href="{{ reunion.link }}" target="_blank" class="action-icon"
-                               style="color: {{ request.session.color_secundario|default:'#3b82f6' }};"
-                               title="Entrar a reunión">
-                                <i class="fas fa-video"></i>
-                            </a>
+                            {% if reunion.fecha|date:'Y-m-d' < today_date %}
+                                <span class="text-gray-400"><i class="fas fa-video-slash"></i></span>
                             {% else %}
-                            <span class="text-gray-400"><i class="fas fa-video-slash"></i></span>
+                                {% if reunion.link %}
+                                    <a href="{{ reunion.link }}" target="_blank" class="action-icon"
+                                       style="color: {{ request.session.color_secundario|default:'#3b82f6' }};"
+                                       title="Entrar a reunión">
+                                        <i class="fas fa-video"></i>
+                                    </a>
+                                {% else %}
+                                    <span class="text-gray-400"><i class="fas fa-video"></i></span>
+                                {% endif %}
                             {% endif %}
                         </td>
                         <td class="py-2 px-4 text-center">
@@ -110,4 +102,174 @@
     </div>
 
 </div>
+
+<!-- Modal: Integrantes -->
+<div id="modal-integrantes" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-xl shadow-lg max-w-lg w-full mx-4 max-h-[80vh] flex flex-col">
+        <div class="border-b p-4 flex justify-between items-center" style="border-color: var(--color-principal);">
+            <h3 class="text-lg font-bold text-gray-800">
+                <i class="fas fa-user-graduate mr-2" style="color: var(--color-principal);"></i>
+                Integrantes del grupo
+            </h3>
+            <button id="cerrar-modal" class="text-gray-400 hover:text-gray-600"></button>
+        </div>
+        <div class="p-4 overflow-y-auto">
+            {% if grupo.estudiantes.exists %}
+            <div class="space-y-3">
+                {% for estudiante in grupo.estudiantes.all %}
+                <div class="flex items-center p-3 border border-gray-200 rounded-md">
+                    <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 mr-3">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-sm font-medium truncate">{{ estudiante.persona.nombre_completo }}</p>
+                        <p class="text-xs text-gray-500 truncate">{{ estudiante.persona.correo_institucional }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-8 text-gray-500">
+                <i class="fas fa-users-slash text-3xl mb-3"></i>
+                <p>No hay estudiantes asignados a este grupo.</p>
+            </div>
+            {% endif %}
+        </div>
+        <div class="border-t p-4 text-center">
+            <button id="cerrar-modal-btn" class="px-4 py-2 rounded-lg text-white font-medium"
+                    style="background-color: {{ request.session.color_secundario|default:'#3b82f6' }};">
+                Cerrar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Actas -->
+<div id="modal-actas" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-xl shadow-lg max-w-4xl w-full mx-4 max-h-[80vh] flex flex-col">
+        <div class="border-b p-4 flex justify-between items-center" style="border-color: var(--color-principal);">
+            <h5 class="text-lg font-bold text-gray-800">
+                <i class="fas fa-file-alt mr-2"></i>Actas del Grupo - {{ grupo.nombre }}
+            </h5>
+            <button id="cerrar-modal-actas" class="text-gray-400 hover:text-gray-600"></button>
+        </div>
+        <div class="p-4 overflow-y-auto">
+            {% if grupo.reuniones.exists %}
+                {% with reuniones_con_actas=grupo.reuniones.all %}
+                {% if reuniones_con_actas %}
+                <div class="table-responsive">
+                    <table class="table text-sm w-full">
+                      <thead class="text-left border-b">
+                        <tr class="text-gray-700 font-semibold">
+                          <th class="px-3 py-2 w-1/3">Fecha de Reunión</th>
+                          <th class="px-3 py-2 w-1/2">Subida por</th>
+                          <th class="px-3 py-2 text-center w-1/6">Archivo</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y text-gray-800">
+                        {% for reunion in reuniones_con_actas %}
+                          {% for acta in reunion.actas.all %}
+                            {% if acta %}
+                            <tr>
+                              <td class="px-3 py-2 align-top">
+                                {{ reunion.fecha|date:"d/m/Y" }} {{ reunion.hora|time:"H:i" }}
+                              </td>
+                              <td class="px-3 py-2 align-top">
+                                {{  grupo.profesor.nombre|default:"Desconocido" }}
+                              </td>
+                              <td class="px-3 py-2 text-center">
+                                <a href="{% url 'gspg:descargar_acta' acta.id %}" 
+                                   class="text-[color:var(--color-secundario)] hover:underline text-lg">
+                                  <i class="fas fa-download"></i>
+                                </a>
+                              </td>
+                            </tr>
+                            {% endif %}
+                          {% endfor %}
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                {% else %}
+                <div class="text-center py-8 text-gray-500">
+                    <i class="fas fa-info-circle mr-2"></i>No hay actas disponibles para este grupo.
+                </div>
+                {% endif %}
+                {% endwith %}
+            {% else %}
+            <div class="text-center py-8 text-gray-500">
+                <i class="fas fa-info-circle mr-2"></i>No hay reuniones registradas para este grupo.
+            </div>
+            {% endif %}
+        </div>
+        <div class="border-t p-4 text-center">
+            <button id="cerrar-modal-actas-btn" class="px-4 py-2 rounded text-white font-medium"
+                    style="background-color: var(--color-secundario);">
+                Cerrar
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // MODAL INTEGRANTES
+        const btnVerIntegrantes = document.getElementById('btn-ver-integrantes');
+        const modalIntegrantes = document.getElementById('modal-integrantes');
+        const cerrarModal = document.getElementById('cerrar-modal');
+        const cerrarModalBtn = document.getElementById('cerrar-modal-btn');
+
+        btnVerIntegrantes.addEventListener('click', () => {
+            modalIntegrantes.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        });
+
+        cerrarModal.addEventListener('click', () => {
+            modalIntegrantes.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        });
+
+        cerrarModalBtn.addEventListener('click', () => {
+            modalIntegrantes.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        });
+
+        modalIntegrantes.addEventListener('click', (e) => {
+            if (e.target === modalIntegrantes) {
+                modalIntegrantes.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }
+        });
+
+        // MODAL ACTAS
+        const btnVerActas = document.getElementById('btn-ver-actas');
+        const modalActas = document.getElementById('modal-actas');
+        const cerrarActas = document.getElementById('cerrar-modal-actas');
+        const cerrarActasBtn = document.getElementById('cerrar-modal-actas-btn');
+
+        btnVerActas.addEventListener('click', () => {
+            modalActas.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        });
+
+        cerrarActas.addEventListener('click', () => {
+            modalActas.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        });
+
+        cerrarActasBtn.addEventListener('click', () => {
+            modalActas.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        });
+
+        modalActas.addEventListener('click', (e) => {
+            if (e.target === modalActas) {
+                modalActas.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }
+        });
+    });
+</script>
 {% endblock %}

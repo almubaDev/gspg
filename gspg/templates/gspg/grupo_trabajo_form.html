@@ -12,6 +12,74 @@
     .select2-container--default .select2-selection--multiple {
         border: 1px solid #ced4da;
     }
+    
+    /* Estilos para el modal de estudiantes */
+    .estudiante-item {
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .estudiante-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .estudiante-list {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    
+    .estudiante-selected {
+        background-color: #e8f4ff;
+    }
+    
+    /* Badge para estudiantes seleccionados */
+    .estudiante-badge {
+        display: inline-block;
+        padding: 0.4em 0.65em;
+        font-size: 0.85em;
+        font-weight: 700;
+        line-height: 1;
+        text-align: center;
+        white-space: nowrap;
+        vertical-align: baseline;
+        border-radius: 0.25rem;
+        background-color: #f0f0f0;
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .estudiante-badge .badge-remove {
+        margin-left: 5px;
+        cursor: pointer;
+        color: #6c757d;
+    }
+    
+    .estudiante-badge .badge-remove:hover {
+        color: #dc3545;
+    }
+    
+    .estudiantes-container {
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        min-height: 38px;
+        padding: 0.375rem 0.75rem;
+        background-color: #fff;
+    }
+    
+    .btn-select-estudiantes {
+        width: 100%;
+        text-align: left;
+        background-color: #fff;
+        border: 1px solid #ced4da;
+        padding: 0.375rem 0.75rem;
+        border-radius: 0.25rem;
+        color: #495057;
+    }
+    
+    .btn-select-estudiantes:hover {
+        background-color: #f8f9fa;
+        border-color: #86b7fe;
+    }
 </style>
 {% endblock %}
 
@@ -36,6 +104,11 @@
                         {% if form.errors %}
                         <div class="alert alert-danger">
                             <i class="fas fa-exclamation-circle me-2"></i>Por favor corrige los errores indicados.
+                            <ul>
+                            {% for field, errors in form.errors.items %}
+                                <li><strong>{{ field }}:</strong> {{ errors|join:", " }}</li>
+                            {% endfor %}
+                            </ul>
                         </div>
                         {% endif %}
                         
@@ -88,14 +161,30 @@
                         
                         <div class="row">
                             <div class="col-md-12 mb-3">
-                                <label for="{{ form.estudiantes.id_for_label }}" class="form-label">{{ form.estudiantes.label }}</label>
-                                {{ form.estudiantes }}
+                                <label class="form-label">{{ form.estudiantes.label }}</label>
+                                
+                                <!-- Campo original oculto para estudiantes -->
+                                <div style="display: none;">
+                                    {{ form.estudiantes }}
+                                </div>
+                                
+                                <!-- Botón para abrir el modal -->
+                                <button type="button" id="btnSelectEstudiantes" class="btn-select-estudiantes" disabled>
+                                    <i class="fas fa-users me-2"></i>Seleccionar estudiantes
+                                </button>
+                                
+                                <!-- Contenedor para mostrar los estudiantes seleccionados -->
+                                <div id="estudiantes-seleccionados" class="estudiantes-container mt-2">
+                                    <div id="no-estudiantes" class="text-muted">No hay estudiantes seleccionados</div>
+                                    <div id="badges-container" class="d-flex flex-wrap"></div>
+                                </div>
+                                
                                 {% if form.estudiantes.errors %}
                                 <div class="text-danger">{{ form.estudiantes.errors }}</div>
                                 {% endif %}
                                 <div class="form-text" id="estudiantes-help">
                                     {% if grupo %}
-                                    Estudiantes disponibles en el intake seleccionado.
+                                    Selecciona los estudiantes que formarán parte de este grupo.
                                     {% else %}
                                     Primero selecciona un intake para ver los estudiantes disponibles.
                                     {% endif %}
@@ -113,6 +202,8 @@
                             </div>
                         </div>
                         
+         
+                        
                         <div class="d-flex justify-content-between mt-4">
                             <a href="{% url 'gspg:grupo_trabajo_list' %}" class="btn btn-secondary">
                                 <i class="fas fa-arrow-left me-1"></i>Cancelar
@@ -123,6 +214,44 @@
                         </div>
                     </form>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Selección de Estudiantes -->
+<div class="modal fade" id="estudiantesModal" tabindex="-1" aria-labelledby="estudiantesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="estudiantesModalLabel">Seleccionar Estudiantes</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <input type="text" id="searchEstudiantes" class="form-control" placeholder="Buscar estudiantes...">
+                </div>
+                
+                <div id="estudiantes-loading" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2">Cargando estudiantes disponibles...</p>
+                </div>
+                
+                <div id="estudiantes-list" class="estudiante-list">
+                    <!-- Aquí se cargarán los estudiantes -->
+                </div>
+                
+                <div id="no-estudiantes-available" class="alert alert-info d-none">
+                    No hay estudiantes disponibles para este intake.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnConfirmEstudiantes">
+                    Agregar Seleccionados <span id="count-selected" class="badge bg-light text-dark">0</span>
+                </button>
             </div>
         </div>
     </div>
@@ -139,109 +268,316 @@
 
 <script>
     $(document).ready(function() {
-        // Inicializar Select2 para profesores
-        $('#id_profesor').select2({
-            placeholder: 'Selecciona un profesor...',
+        // Colección para mantener un registro de los estudiantes disponibles
+        var estudiantes = {};
+        // Objeto para mantener un registro de los estudiantes seleccionados
+        var estudiantesSeleccionados = {};
+        // Variable para el modal
+        var estudiantesModal = new bootstrap.Modal(document.getElementById('estudiantesModal'));
+        
+        // Función de depuración
+        function updateDebugInfo() {
+            var intakeVal = $('#id_intake').val();
+            var estudiantesVals = $('#id_estudiantes').val();
+            var numSeleccionados = Object.keys(estudiantesSeleccionados).length;
+            
+            $('#debug-panel').html(`
+                <p><strong>Intake:</strong> ${intakeVal || 'No seleccionado'}</p>
+                <p><strong>Estudiantes seleccionados:</strong> ${numSeleccionados}</p>
+                <p><strong>Valores en campo oculto:</strong> ${JSON.stringify(estudiantesVals || [])}</p>
+            `);
+        }
+        
+        // Actualizar información de depuración cada segundo
+        setInterval(updateDebugInfo, 1000);
+        
+        // Inicializar Select2 para profesores e intake
+        $('#id_profesor, #id_intake').select2({
+            placeholder: 'Selecciona...',
             width: '100%'
         });
         
-        // Inicializar Select2 para intake
-        $('#id_intake').select2({
-            placeholder: 'Selecciona un intake...',
-            width: '100%'
-        });
-        
-        // Inicializar Select2 para estudiantes
-        $('#id_estudiantes').select2({
-            placeholder: 'Selecciona estudiantes...',
-            width: '100%'
-        });
-        
-        // Cuando cambia el intake, actualizar los estudiantes disponibles
-        $('#id_intake').on('change', function() {
-            var intakeId = $(this).val();
-            if (intakeId) {
-                // Habilitar el campo de estudiantes
-                $('#id_estudiantes').prop('disabled', false);
-                
-                // Cargar estudiantes disponibles para este intake
-                $.ajax({
-                    url: '{% url "gspg:get_estudiantes_por_intake" %}',
-                    data: {
-                        'intake_id': intakeId,
-                        'grupo_id': '{{ grupo.id|default:"" }}'
-                    },
-                    dataType: 'json',
-                    success: function(data) {
-                        // Limpiar el select de estudiantes
-                        $('#id_estudiantes').empty();
-                        
-                        // Añadir los estudiantes disponibles
-                        if (data.estudiantes && data.estudiantes.length > 0) {
-                            $.each(data.estudiantes, function(index, estudiante) {
-                                $('#id_estudiantes').append(
-                                    $('<option></option>')
-                                        .attr('value', estudiante.id)
-                                        .text(estudiante.text)
-                                );
-                            });
-                            $('#estudiantes-help').text('Selecciona los estudiantes que formarán parte de este grupo.');
-                        } else {
-                            $('#estudiantes-help').text('No hay estudiantes disponibles para este intake.');
-                        }
-                        
-                        // Actualizar Select2
-                        $('#id_estudiantes').trigger('change');
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Error al cargar estudiantes:', error);
-                        $('#estudiantes-help').text('Error al cargar estudiantes. Por favor, inténtalo de nuevo.');
-                    }
-                });
-            } else {
-                // Deshabilitar el campo de estudiantes si no hay intake seleccionado
-                $('#id_estudiantes').prop('disabled', true).empty().trigger('change');
-                $('#estudiantes-help').text('Primero selecciona un intake para ver los estudiantes disponibles.');
+        // Mostrar los estudiantes en el modal
+        function mostrarEstudiantesEnModal() {
+            const listaEstudiantes = $('#estudiantes-list');
+            listaEstudiantes.empty();
+            
+            // Verificar si hay estudiantes disponibles
+            if (Object.keys(estudiantes).length === 0) {
+                $('#no-estudiantes-available').removeClass('d-none');
+                return;
             }
-        });
+            
+            $('#no-estudiantes-available').addClass('d-none');
+            
+            // Ordenar estudiantes por nombre
+            const estudiantesArray = Object.values(estudiantes);
+            estudiantesArray.sort((a, b) => a.text.localeCompare(b.text));
+            
+            // Crear elementos para cada estudiante
+            estudiantesArray.forEach(function(estudiante) {
+                const isSelected = estudiantesSeleccionados[estudiante.id] !== undefined;
+                
+                const item = $(`
+                    <div class="estudiante-item ${isSelected ? 'estudiante-selected' : ''}" data-id="${estudiante.id}">
+                        <div class="form-check">
+                            <input class="form-check-input estudiante-checkbox" type="checkbox" value="${estudiante.id}" id="check_${estudiante.id}" ${isSelected ? 'checked' : ''}>
+                            <label class="form-check-label" for="check_${estudiante.id}">
+                                ${estudiante.text}
+                            </label>
+                        </div>
+                    </div>
+                `);
+                
+                listaEstudiantes.append(item);
+            });
+            
+            // Actualizar contador de seleccionados
+            actualizarContadorSeleccionados();
+        }
         
-        // Si ya hay un intake seleccionado (en edición), cargamos los estudiantes
-        {% if grupo and grupo.intake %}
-        // Cargar estudiantes disponibles para este intake
-        $.ajax({
-            url: '{% url "gspg:get_estudiantes_por_intake" %}',
-            data: {
-                'intake_id': '{{ grupo.intake.id }}',
-                'grupo_id': '{{ grupo.id }}'
-            },
-            dataType: 'json',
-            success: function(data) {
-                // Añadir los estudiantes disponibles
-                if (data.estudiantes && data.estudiantes.length > 0) {
-                    $.each(data.estudiantes, function(index, estudiante) {
-                        // Comprobar si el estudiante ya está seleccionado
-                        var isSelected = false;
-                        {% for est in grupo.estudiantes.all %}
-                        if (estudiante.id == {{ est.id }}) {
-                            isSelected = true;
-                        }
-                        {% endfor %}
-                        
-                        var option = new Option(estudiante.text, estudiante.id, false, isSelected);
-                        $('#id_estudiantes').append(option);
+        // Actualizar contador de estudiantes seleccionados
+        function actualizarContadorSeleccionados() {
+            const count = Object.keys(estudiantesSeleccionados).length;
+            $('#count-selected').text(count);
+        }
+        
+        // Actualizar la visualización de estudiantes seleccionados en el formulario principal
+        function actualizarVisualizacionEstudiantes() {
+            const badgesContainer = $('#badges-container');
+            badgesContainer.empty();
+            
+            const selectedCount = Object.keys(estudiantesSeleccionados).length;
+            
+            if (selectedCount === 0) {
+                $('#no-estudiantes').show();
+            } else {
+                $('#no-estudiantes').hide();
+                
+                // Crear badges para cada estudiante seleccionado
+                Object.values(estudiantesSeleccionados).forEach(function(estudiante) {
+                    const badge = $(`
+                        <div class="estudiante-badge" data-id="${estudiante.id}">
+                            ${estudiante.text}
+                            <span class="badge-remove"><i class="fas fa-times"></i></span>
+                        </div>
+                    `);
+                    
+                    // Manejar clic en el botón de eliminar
+                    badge.find('.badge-remove').on('click', function(e) {
+                        e.stopPropagation();
+                        eliminarEstudianteSeleccionado(estudiante.id);
                     });
                     
-                    // Actualizar Select2
-                    $('#id_estudiantes').trigger('change');
-                }
+                    badgesContainer.append(badge);
+                });
             }
+            
+            // Actualizar el campo hidden con los valores
+            actualizarCampoOculto();
+        }
+        
+        // Eliminar un estudiante de la selección
+        function eliminarEstudianteSeleccionado(id) {
+            delete estudiantesSeleccionados[id];
+            actualizarVisualizacionEstudiantes();
+            actualizarContadorSeleccionados();
+        }
+        
+        // Actualizar el campo oculto con los IDs de estudiantes seleccionados
+        function actualizarCampoOculto() {
+            const idsSeleccionados = Object.keys(estudiantesSeleccionados);
+            
+            // Primero limpiar las opciones actuales
+            $('#id_estudiantes').empty();
+            
+            // Agregar una opción por cada estudiante seleccionado
+            idsSeleccionados.forEach(function(id) {
+                $('#id_estudiantes').append(new Option('', id, true, true));
+            });
+            
+            updateDebugInfo();
+        }
+        
+        // Cargar estudiantes cuando cambia el intake
+        $('#id_intake').on('change', function() {
+            const intakeId = $(this).val();
+            
+            // Resetear colecciones
+            estudiantes = {};
+            estudiantesSeleccionados = {};
+            
+            // Limpiar visualización
+            $('#badges-container').empty();
+            $('#no-estudiantes').show();
+            
+            if (intakeId) {
+                // Habilitar botón de selección de estudiantes
+                $('#btnSelectEstudiantes').prop('disabled', false);
+                
+                // Mostrar mensaje de ayuda
+                $('#estudiantes-help').text('Haz clic en "Seleccionar estudiantes" para elegir los integrantes del grupo.');
+            } else {
+                // Deshabilitar botón si no hay intake
+                $('#btnSelectEstudiantes').prop('disabled', true);
+                $('#estudiantes-help').text('Primero selecciona un intake para ver los estudiantes disponibles.');
+            }
+            
+            // Actualizar campos
+            actualizarCampoOculto();
+        });
+        
+        // Abrir modal al hacer clic en el botón de selección
+        $('#btnSelectEstudiantes').on('click', function() {
+            const intakeId = $('#id_intake').val();
+            
+            if (!intakeId) return;
+            
+            // Mostrar cargando y ocultar lista
+            $('#estudiantes-loading').show();
+            $('#estudiantes-list').hide();
+            $('#no-estudiantes-available').addClass('d-none');
+            
+            // Mostrar el modal
+            estudiantesModal.show();
+            
+            // Cargar estudiantes disponibles
+            $.ajax({
+                url: '{% url "gspg:get_estudiantes_por_intake" %}',
+                data: {
+                    'intake_id': intakeId,
+                    'grupo_id': '{{ grupo.id|default:"" }}'
+                },
+                dataType: 'json',
+                success: function(data) {
+                    console.log("Datos recibidos:", data);
+                    
+                    // Resetear estudiantes pero mantener seleccionados
+                    estudiantes = {};
+                    
+                    // Guardar estudiantes en el objeto
+                    if (data.estudiantes && data.estudiantes.length > 0) {
+                        data.estudiantes.forEach(function(est) {
+                            estudiantes[est.id] = est;
+                        });
+                    }
+                    
+                    // Ocultar cargando y mostrar lista
+                    $('#estudiantes-loading').hide();
+                    $('#estudiantes-list').show();
+                    
+                    // Mostrar estudiantes en el modal
+                    mostrarEstudiantesEnModal();
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error al cargar estudiantes:', error);
+                    $('#estudiantes-loading').hide();
+                    $('#estudiantes-list').html('<div class="alert alert-danger">Error al cargar estudiantes</div>');
+                }
+            });
+        });
+        
+        // Manejar clic en los checkboxes de estudiantes
+        $(document).on('change', '.estudiante-checkbox', function() {
+            const id = $(this).val();
+            const isChecked = $(this).prop('checked');
+            const item = $(this).closest('.estudiante-item');
+            
+            if (isChecked) {
+                // Añadir a seleccionados
+                estudiantesSeleccionados[id] = estudiantes[id];
+                item.addClass('estudiante-selected');
+            } else {
+                // Eliminar de seleccionados
+                delete estudiantesSeleccionados[id];
+                item.removeClass('estudiante-selected');
+            }
+            
+            actualizarContadorSeleccionados();
+        });
+        
+        // Manejar clic en elementos de estudiante para alternar checkbox
+        $(document).on('click', '.estudiante-item', function(e) {
+            // Solo procesar si no se hizo clic directamente en el checkbox
+            if (!$(e.target).hasClass('form-check-input')) {
+                const checkbox = $(this).find('.estudiante-checkbox');
+                checkbox.prop('checked', !checkbox.prop('checked')).trigger('change');
+            }
+        });
+        
+        // Manejar búsqueda de estudiantes
+        $('#searchEstudiantes').on('input', function() {
+            const searchText = $(this).val().toLowerCase();
+            
+            $('.estudiante-item').each(function() {
+                const text = $(this).text().toLowerCase();
+                if (text.includes(searchText)) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        });
+        
+        // Confirmar selección de estudiantes
+        $('#btnConfirmEstudiantes').on('click', function() {
+            estudiantesModal.hide();
+            actualizarVisualizacionEstudiantes();
+        });
+        
+        // Prevenir enviar el formulario sin estudiantes
+        $('#grupo-form').on('submit', function(e) {
+            // Verificar que haya estudiantes seleccionados
+            if (Object.keys(estudiantesSeleccionados).length === 0) {
+                e.preventDefault();
+                alert('Por favor, selecciona al menos un estudiante para continuar.');
+                return false;
+            }
+            
+            // Log para depuración
+            console.log("Enviando formulario con estudiantes:", $('#id_estudiantes').val());
+            
+            return true;
+        });
+        
+        // Si hay estudiantes preseleccionados (en edición)
+        {% if grupo and grupo.estudiantes.exists %}
+        $(function() {
+            // Habilitar botón
+            $('#btnSelectEstudiantes').prop('disabled', false);
+            
+            $.ajax({
+                url: '{% url "gspg:get_estudiantes_por_intake" %}',
+                data: {
+                    'intake_id': '{{ grupo.intake.id }}',
+                    'grupo_id': '{{ grupo.id }}'
+                },
+                dataType: 'json',
+                success: function(data) {
+                    // Guardar todos los estudiantes disponibles
+                    if (data.estudiantes && data.estudiantes.length > 0) {
+                        data.estudiantes.forEach(function(est) {
+                            estudiantes[est.id] = est;
+                        });
+                    }
+                    
+                    // Preseleccionar estudiantes del grupo
+                    {% for est in grupo.estudiantes.all %}
+                    estudiantesSeleccionados[{{ est.id }}] = {
+                        id: {{ est.id }},
+                        text: "{{ est.persona.nombre_completo }} ({{ est.persona.rut }})"
+                    };
+                    {% endfor %}
+                    
+                    // Actualizar visualización
+                    actualizarVisualizacionEstudiantes();
+                }
+            });
         });
         {% endif %}
         
-        // Prevenir enviar el formulario con estudiantes disabled
-        $('#grupo-form').on('submit', function() {
-            $('#id_estudiantes, #id_intake').prop('disabled', false);
-        });
+        // Ejecutar una vez al inicio
+        updateDebugInfo();
     });
 </script>
 {% endblock %}

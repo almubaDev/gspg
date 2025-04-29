@@ -156,8 +156,8 @@
   <!-- Calendario -->
   <div id="calendar" class="bg-white rounded-xl shadow-sm pt-2"></div>
 
-  <!-- Formulario inline -->
-  <form id="form-reunion" method="post" action="{% url 'gspg:reunion_create' grupo.id %}" class="bg-white p-2 rounded-xl shadow hidden">
+  <!-- Formulario inline - ACCIÓN ACTUALIZADA -->
+  <form id="form-reunion" method="post" action="{% url 'gspg_client:crear_reunion_cliente' grupo.id %}" class="bg-white p-2 rounded-xl shadow hidden">
     {% csrf_token %}
     <input type="hidden" name="fecha" id="fecha-seleccionada">
 

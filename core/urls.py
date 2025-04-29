@@ -14,7 +14,7 @@ urlpatterns = [
     path('', home_redirect, name='home'),
     path('admin/', admin.site.urls),
     path('accounts/', include('django.contrib.auth.urls')),
-    path('', include(('gspg.urls', 'gspg'), namespace='gspg')),
+    path('gspg/', include(('gspg.urls', 'gspg'), namespace='gspg')),
     path('', include(('users.urls', 'users'), namespace='users')),
     path('app/', include('gspg_client.urls')),
 ] 

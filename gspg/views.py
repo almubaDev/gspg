@@ -954,6 +954,10 @@ def grupo_trabajo_create(request):
         return redirect('gspg:dashboard')
     
     if request.method == 'POST':
+        # Verificar integridad de datos en POST antes de procesar
+        print("POST data:", request.POST)
+        print("Estudiantes en POST:", request.POST.getlist('estudiantes'))
+        
         form = GrupoTrabajoForm(request.POST, user=request.user)
         
         if form.is_valid():
@@ -971,10 +975,10 @@ def grupo_trabajo_create(request):
                     return redirect('gspg:grupo_trabajo_list')
                 
                 # Verificar que los estudiantes pertenezcan al intake seleccionado
-                estudiantes = form.cleaned_data['estudiantes']
+                estudiantes = form.cleaned_data.get('estudiantes', [])
                 for estudiante in estudiantes:
                     if estudiante.intake != intake:
-                        messages.error(request, "Uno o más estudiantes no pertenecen al intake seleccionado.")
+                        messages.error(request, f"El estudiante {estudiante.persona.nombre_completo} no pertenece al intake seleccionado.")
                         return redirect('gspg:grupo_trabajo_list')
                 
                 # Crear el grupo de trabajo
@@ -982,16 +986,58 @@ def grupo_trabajo_create(request):
                 grupo.magister = request.user.active_magister
                 grupo.save()
                 
-                # Guardar relaciones ManyToMany
+                # Guardar relaciones ManyToMany - esto añade los estudiantes
                 form.save_m2m()
                 
                 # Actualizar el estado de proceso de grado de los estudiantes
-                estudiantes.update(proceso_grado='proceso')
+                if estudiantes:
+                    for estudiante in estudiantes:
+                        estudiante.proceso_grado = 'proceso'
+                        estudiante.save()
                 
                 messages.success(request, "Grupo de trabajo creado exitosamente.")
                 return redirect('gspg:grupo_trabajo_list')
             except Exception as e:
+                print(f"Error detallado: {str(e)}")
+                import traceback
+                traceback.print_exc()
                 messages.error(request, f"Error al crear el grupo de trabajo: {str(e)}")
+        else:
+            print("Form errors:", form.errors)
+            # Intento de recuperación si el formulario es inválido pero hay datos suficientes
+            if 'nombre' in request.POST and request.POST.get('profesor') and request.POST.get('intake') and request.POST.getlist('estudiantes'):
+                try:
+                    # Obtener datos necesarios
+                    intake = Intake.objects.get(id=request.POST.get('intake'))
+                    profesor = Profesor.objects.get(id=request.POST.get('profesor'))
+                    estudiante_ids = request.POST.getlist('estudiantes')
+                    
+                    # Crear grupo manualmente
+                    grupo = GrupoTrabajo(
+                        nombre=request.POST.get('nombre'),
+                        profesor=profesor,
+                        intake=intake,
+                        fecha_inicio=request.POST.get('fecha_inicio'),
+                        fecha_fin=request.POST.get('fecha_fin'),
+                        observaciones=request.POST.get('observaciones', ''),
+                        magister=request.user.active_magister
+                    )
+                    grupo.save()
+                    
+                    # Añadir estudiantes
+                    estudiantes = Estudiante.objects.filter(id__in=estudiante_ids)
+                    grupo.estudiantes.set(estudiantes)
+                    
+                    # Actualizar estado de estudiantes
+                    for estudiante in estudiantes:
+                        estudiante.proceso_grado = 'proceso'
+                        estudiante.save()
+                    
+                    messages.success(request, "Grupo de trabajo creado manualmente con éxito.")
+                    return redirect('gspg:grupo_trabajo_list')
+                except Exception as e:
+                    print(f"Error en recuperación manual: {str(e)}")
+                    messages.error(request, f"No se pudo crear manualmente: {str(e)}")
     else:
         form = GrupoTrabajoForm(user=request.user)
     
@@ -1000,6 +1046,7 @@ def grupo_trabajo_create(request):
         'form': form,
     }
     return render(request, 'gspg/grupo_trabajo_form.html', context)
+
 
 @login_required
 def grupo_trabajo_edit(request, pk):
@@ -1017,6 +1064,10 @@ def grupo_trabajo_edit(request, pk):
         return redirect('gspg:grupo_trabajo_detail', pk=grupo.pk)
     
     if request.method == 'POST':
+        # Verificar integridad de datos en POST antes de procesar
+        print("POST data:", request.POST)
+        print("Estudiantes en POST:", request.POST.getlist('estudiantes'))
+        
         form = GrupoTrabajoForm(request.POST, instance=grupo, user=request.user)
         
         if form.is_valid():
@@ -1025,14 +1076,14 @@ def grupo_trabajo_edit(request, pk):
                 profesor = form.cleaned_data['profesor']
                 if request.user.active_magister not in profesor.magisteres.all():
                     messages.error(request, "El profesor seleccionado no pertenece a tu programa activo.")
-                    return redirect('gspg:grupo_trabajo_list')
+                    return redirect('gspg:grupo_trabajo_detail', pk=grupo.pk)
                 
                 # Verificar que los estudiantes pertenezcan al magíster activo del usuario
-                estudiantes = form.cleaned_data['estudiantes']
+                estudiantes = form.cleaned_data.get('estudiantes', [])
                 for estudiante in estudiantes:
                     if estudiante.intake.magister != request.user.active_magister:
-                        messages.error(request, "Uno o más estudiantes no pertenecen a tu programa activo.")
-                        return redirect('gspg:grupo_trabajo_list')
+                        messages.error(request, f"El estudiante {estudiante.persona.nombre_completo} no pertenece a tu programa activo.")
+                        return redirect('gspg:grupo_trabajo_detail', pk=grupo.pk)
                 
                 # Obtener estudiantes antes de la actualización
                 estudiantes_antiguos = set(grupo.estudiantes.all())
@@ -1041,7 +1092,7 @@ def grupo_trabajo_edit(request, pk):
                 form.save()
                 
                 # Obtener estudiantes después de la actualización
-                estudiantes_nuevos = set(form.cleaned_data['estudiantes'])
+                estudiantes_nuevos = set(estudiantes)
                 
                 # Estudiantes que se quitaron
                 estudiantes_eliminados = estudiantes_antiguos - estudiantes_nuevos
@@ -1058,7 +1109,51 @@ def grupo_trabajo_edit(request, pk):
                 messages.success(request, "Grupo de trabajo actualizado exitosamente.")
                 return redirect('gspg:grupo_trabajo_detail', pk=grupo.pk)
             except Exception as e:
+                print(f"Error detallado: {str(e)}")
+                import traceback
+                traceback.print_exc()
                 messages.error(request, f"Error al actualizar el grupo de trabajo: {str(e)}")
+        else:
+            print("Form errors:", form.errors)
+            # Intento de recuperación si el formulario es inválido pero hay datos suficientes
+            if request.POST.get('nombre') and request.POST.get('profesor') and request.POST.getlist('estudiantes'):
+                try:
+                    # Obtener datos necesarios
+                    profesor = Profesor.objects.get(id=request.POST.get('profesor'))
+                    estudiante_ids = request.POST.getlist('estudiantes')
+                    
+                    # Actualizar campos básicos
+                    grupo.nombre = request.POST.get('nombre')
+                    grupo.profesor = profesor
+                    grupo.fecha_inicio = request.POST.get('fecha_inicio')
+                    grupo.fecha_fin = request.POST.get('fecha_fin')
+                    grupo.observaciones = request.POST.get('observaciones', '')
+                    grupo.save()
+                    
+                    # Obtener estudiantes anteriores
+                    estudiantes_antiguos = set(grupo.estudiantes.all())
+                    
+                    # Actualizar estudiantes
+                    estudiantes_nuevos = Estudiante.objects.filter(id__in=estudiante_ids)
+                    grupo.estudiantes.set(estudiantes_nuevos)
+                    
+                    # Estudiantes que se quitaron
+                    estudiantes_eliminados = estudiantes_antiguos - set(estudiantes_nuevos)
+                    for estudiante in estudiantes_eliminados:
+                        estudiante.proceso_grado = 'pendiente'
+                        estudiante.save()
+                    
+                    # Estudiantes que se añadieron
+                    estudiantes_agregados = set(estudiantes_nuevos) - estudiantes_antiguos
+                    for estudiante in estudiantes_agregados:
+                        estudiante.proceso_grado = 'proceso'
+                        estudiante.save()
+                    
+                    messages.success(request, "Grupo de trabajo actualizado manualmente con éxito.")
+                    return redirect('gspg:grupo_trabajo_detail', pk=grupo.pk)
+                except Exception as e:
+                    print(f"Error en recuperación manual: {str(e)}")
+                    messages.error(request, f"No se pudo actualizar manualmente: {str(e)}")
     else:
         form = GrupoTrabajoForm(instance=grupo, user=request.user)
     
@@ -1069,7 +1164,6 @@ def grupo_trabajo_edit(request, pk):
     }
     return render(request, 'gspg/grupo_trabajo_form.html', context)
 
-@login_required
 def grupo_trabajo_detail(request, pk):
     """Ver detalles de un Grupo de Trabajo"""
     if not hasattr(request.user, 'active_magister') or not request.user.active_magister:
@@ -1083,10 +1177,14 @@ def grupo_trabajo_detail(request, pk):
     from datetime import date
     puede_finalizar = not grupo.finalizado and date.today() >= grupo.fecha_fin
     
+    # Calcular estadísticas de asistencia
+    estadisticas_asistencia = calcular_estadisticas_asistencia(grupo)
+    
     context = {
         'page_title': 'Detalle de Grupo de Trabajo',
         'grupo': grupo,
         'puede_finalizar': puede_finalizar,
+        'estadisticas_asistencia': estadisticas_asistencia,
     }
     return render(request, 'gspg/grupo_trabajo_detail.html', context)
 
@@ -1254,11 +1352,21 @@ def reunion_list(request, grupo_pk):
     reuniones_pasadas = reuniones.filter(fecha__lt=hoy).order_by('-fecha', '-hora')
     reuniones_futuras = reuniones.filter(fecha__gte=hoy).order_by('fecha', 'hora')
     
+    # Obtener todas las actas para el modal
+    from django.db.models import Prefetch
+    reuniones_con_actas = ReunionGrupo.objects.filter(
+        grupo=grupo, 
+        actas__isnull=False
+    ).prefetch_related(
+        'actas', 'actas__subido_por'
+    ).distinct()
+    
     context = {
         'page_title': f'Reuniones - {grupo.nombre}',
         'grupo': grupo,
         'reuniones_futuras': reuniones_futuras,
         'reuniones_pasadas': reuniones_pasadas,
+        'reuniones_con_actas': reuniones_con_actas,
     }
     return render(request, 'gspg/reunion_list.html', context)
 
@@ -1406,6 +1514,82 @@ def confirmar_asistencia(request, reunion_id):
     }
 
     return render(request, 'gspg/confirmar_asistencia.html', context)
+
+
+
+def calcular_estadisticas_asistencia(grupo):
+    """
+    Calcula estadísticas de asistencia para cada estudiante del grupo.
+    Retorna un diccionario donde la clave es el ID del estudiante y el valor
+    contiene sus estadísticas de asistencia.
+    """
+    # Obtener todas las reuniones del grupo
+    reuniones = ReunionGrupo.objects.filter(grupo=grupo)
+    total_reuniones = reuniones.count()
+    
+    # Si no hay reuniones, retornar un diccionario vacío
+    if total_reuniones == 0:
+        return {}
+    
+    # Inicializar estadísticas para cada estudiante
+    estudiantes = grupo.estudiantes.all()
+    estadisticas = {}
+    
+    for estudiante in estudiantes:
+        # Obtener registros de asistencia del estudiante
+        asistencias = AsistenciaReunion.objects.filter(
+            reunion__grupo=grupo,
+            estudiante=estudiante
+        )
+        
+        # Contar presentes y ausentes
+        presentes = asistencias.filter(asistio=True).count()
+        ausentes = asistencias.filter(asistio=False).count()
+        
+        # Calcular porcentaje (evitar división por cero)
+        porcentaje = (presentes / total_reuniones) * 100 if total_reuniones > 0 else 0
+        
+        # Reuniones sin registro de asistencia
+        sin_registro = total_reuniones - (presentes + ausentes)
+        
+        # Guardar estadísticas
+        estadisticas[estudiante.id] = {
+            'estudiante': estudiante,
+            'presentes': presentes,
+            'ausentes': ausentes,
+            'sin_registro': sin_registro,
+            'total_reuniones': total_reuniones,
+            'porcentaje': round(porcentaje, 1)
+        }
+    
+    return estadisticas
+
+from django.http import FileResponse
+import os
+
+@login_required
+def descargar_acta(request, acta_id):
+    acta = get_object_or_404(ActaReunion, id=acta_id)
+    
+    try:
+        file_path = acta.archivo.path
+        
+        if os.path.exists(file_path):
+            response = FileResponse(open(file_path, 'rb'), content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="{os.path.basename(file_path)}"'
+            return response
+        else:
+            messages.error(request, "El archivo no existe en el servidor.")
+    except Exception as e:
+        import traceback
+        print(f"Error en descargar_acta: {str(e)}")
+        print(traceback.format_exc())
+        messages.error(request, f"Error al descargar el archivo: {str(e)}")
+    
+    # Redirección en caso de error
+    return redirect('gspg:reunion_list', grupo_pk=acta.reunion.grupo.pk)
+
+
 
 
 
